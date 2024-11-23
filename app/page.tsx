@@ -17,6 +17,7 @@ import {
   Menu
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -39,7 +40,11 @@ export default function Home() {
               <Button variant="ghost" className="text-[#919191] hover:text-white hover:bg-[#1F1F1F]">Features</Button>
               <Button variant="ghost" className="text-[#919191] hover:text-white hover:bg-[#1F1F1F]">Docs</Button>
               <Button variant="ghost" className="text-[#919191] hover:text-white hover:bg-[#1F1F1F]">Pricing</Button>
-              <Button className="bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90">Get Started</Button>
+              <Link href="/login">
+                <Button size="lg" className="bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90">
+                  Get Started
+                </Button>
+              </Link>
             </nav>
 
             {/* Mobile Navigation */}
@@ -88,12 +93,16 @@ export default function Home() {
             transition={{ delay: 0.4, duration: 0.8 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button size="lg" className="bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90">
-              Get Started Free
-            </Button>
-            <Button size="lg" variant="outline" className="border-[#1F1F1F] text-[#919191] hover:text-white hover:bg-[#1F1F1F]">
-              View Documentation
-            </Button>
+            <Link href="/login">
+              <Button size="lg" className="bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90">
+                Get Started
+              </Button>
+            </Link>
+            <Link href="https://www.assemblyai.com/docs" target="_blank" rel="noopener noreferrer">
+              <Button size="lg" variant="outline" className="border-[#1F1F1F] text-[#919191] hover:text-white hover:bg-[#1F1F1F]">
+                View Documentation
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </section>
