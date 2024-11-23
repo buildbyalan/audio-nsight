@@ -124,7 +124,7 @@ export default function Home() {
                 whileInView={{ y: 0, opacity: 1 }}
                 transition={{ delay: index * 0.1, duration: 0.8 }}
                 viewport={{ once: true }}
-                className={`group relative ${index === 0 ? 'lg:col-span-2' : ''} ${index === 3 ? 'lg:col-span-2' : ''}`}
+                className={`group relative ${index === 0 || index === 3 || index === 4 ? 'lg:col-span-2' : ''}`}
               >
                 <Card className="h-full bg-[#0A0A0A] border-[#1F1F1F] hover:border-[#2F2F2F] transition-all overflow-hidden rounded-sm">
                   <div className="absolute inset-0 bg-gradient-to-br from-[#FF8A3C]/5 to-[#FFB224]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
