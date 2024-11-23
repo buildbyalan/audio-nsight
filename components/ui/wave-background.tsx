@@ -31,9 +31,8 @@ function WaveMesh() {
     <mesh
       ref={meshRef}
       rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, -0.5, 0]}
-      onPointerOver={() => (hover.current = true)}
-      onPointerOut={() => (hover.current = false)}
+      position={[0, 0, 0]}
+      scale={[2, 2, 1]}
     >
       <planeGeometry args={[8, 8, 20, 20]} />
       <meshPhongMaterial
@@ -62,8 +61,8 @@ export function WaveBackground() {
     >
       <Canvas
         camera={{
-          position: new Vector3(0, 3, 5),
-          fov: 45,
+          position: new Vector3(0, 5, 5),
+          fov: 55,
           near: 0.1,
           far: 100,
         }}
