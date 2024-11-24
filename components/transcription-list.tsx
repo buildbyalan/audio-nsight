@@ -1,155 +1,131 @@
 'use client'
 
-import { useState } from 'react'
-import { FileText, Clock, CheckCircle, XCircle, ChevronDown } from 'lucide-react'
+import { 
+  FileText, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Upload, 
+  ChevronRight,
+  Timer,
+  Calendar
+} from 'lucide-react'
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-
-interface Transcription {
-  id: string
-  file_name: string
-  status: 'processing' | 'completed' | 'failed'
-  transcript?: {
-    text: string
-    confidence: number
-    words: Array<{
-      text: string
-      start: number
-      end: number
-      confidence: number
-    }>
-  }
-  created_at: string
-}
+import { formatDistanceToNow, format } from 'date-fns'
+import { Process } from '@/types/process'
+import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 interface TranscriptionListProps {
-  transcriptions: Transcription[]
+  transcriptions: Process[]
 }
 
 export function TranscriptionList({ transcriptions }: TranscriptionListProps) {
-  const [openItems, setOpenItems] = useState<Set<string>>(new Set())
-
-  const toggleItem = (id: string) => {
-    const newOpenItems = new Set(openItems)
-    if (newOpenItems.has(id)) {
-      newOpenItems.delete(id)
-    } else {
-      newOpenItems.add(id)
-    }
-    setOpenItems(newOpenItems)
-  }
-
-  const getStatusIcon = (status: Transcription['status']) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'processing':
-        return <Clock className="h-5 w-5 text-blue-500" />
+        return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50'
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case 'failed':
-        return <XCircle className="h-5 w-5 text-red-500" />
+        return 'bg-emerald-500/20 text-emerald-500 border-emerald-500/50'
+      case 'error':
+        return 'bg-red-500/20 text-red-500 border-red-500/50'
+      case 'queued':
+        return 'bg-blue-500/20 text-blue-500 border-blue-500/50'
+      default:
+        return 'bg-zinc-500/20 text-zinc-500 border-zinc-500/50'
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'processing':
+        return <Clock className="h-4 w-4 animate-spin" />
+      case 'completed':
+        return <CheckCircle className="h-4 w-4" />
+      case 'error':
+        return <XCircle className="h-4 w-4" />
+      case 'queued':
+        return <Clock className="h-4 w-4" />
+      default:
+        return <Clock className="h-4 w-4" />
+    }
   }
 
-  if (transcriptions.length === 0) {
+  if (!transcriptions || transcriptions.length === 0) {
     return (
-      <Card className="bg-[#0A0A0A] border-[#1F1F1F]">
-        <CardContent className="py-10">
-          <div className="text-center text-[#919191]">
-            <FileText className="mx-auto h-12 w-12 mb-4" />
-            <p>No transcriptions yet</p>
-            <p className="text-sm mt-2">Upload an audio file to get started</p>
+      <Card className="bg-zinc-900/50 border-zinc-800/50 backdrop-blur-sm">
+        <CardContent className="flex flex-col items-center justify-center p-12">
+          <div className="rounded-full bg-zinc-800/50 p-4 mb-4">
+            <Upload className="h-8 w-8 text-zinc-500" />
           </div>
+          <h3 className="text-xl font-semibold text-zinc-300 mb-2">No transcriptions yet</h3>
+          <p className="text-zinc-500 text-center max-w-sm">
+            Upload an audio file to get started with AI-powered transcription
+          </p>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <div className="space-y-4">
-      {transcriptions.map((transcription) => (
-        <Collapsible
-          key={transcription.id}
-          open={openItems.has(transcription.id)}
-          onOpenChange={() => toggleItem(transcription.id)}
+    <div className="space-y-3">
+      {transcriptions.map((item) => (
+        <Link 
+          key={item.id} 
+          href={`/transcription/${item.id}`}
         >
-          <Card className="bg-[#0A0A0A] border-[#1F1F1F]">
-            <CardHeader className="p-4">
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {getStatusIcon(transcription.status)}
-                    <div>
-                      <CardTitle className="text-lg">
-                        {transcription.file_name}
-                      </CardTitle>
-                      <CardDescription>
-                        {formatDate(transcription.created_at)}
-                      </CardDescription>
+          <Card className="bg-zinc-900/50 border-zinc-800/50 backdrop-blur-sm hover:bg-zinc-900/70 hover:border-zinc-700/50 transition-all duration-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between group">
+                <div className="flex items-center space-x-4">
+                  <div className="rounded-lg bg-zinc-800/50 p-2">
+                    <FileText className="h-5 w-5 text-zinc-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors">
+                      {item.title}
+                    </h3>
+                    <div className="flex items-center space-x-4 mt-1">
+                      <div className="flex items-center space-x-2 text-zinc-500">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span className="text-sm">
+                          {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                      {item.metadata?.duration && (
+                        <>
+                          <span className="text-zinc-700">•</span>
+                          <div className="flex items-center space-x-2 text-zinc-500">
+                            <Timer className="h-3.5 w-3.5" />
+                            <span className="text-sm">
+                              {Math.round(item.metadata.duration / 60)} min
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
-                  <ChevronDown
-                    className={`h-5 w-5 transform transition-transform ${
-                      openItems.has(transcription.id) ? 'rotate-180' : ''
-                    }`}
-                  />
                 </div>
-              </CollapsibleTrigger>
-            </CardHeader>
-            <CollapsibleContent>
-              <CardContent className="p-4 pt-0">
-                {transcription.status === 'completed' && transcription.transcript ? (
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-[#919191] mb-2">
-                        Transcription
-                      </h4>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {transcription.transcript.text}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-[#919191] mb-2">
-                        Confidence Score
-                      </h4>
-                      <p className="text-sm">
-                        {(transcription.transcript.confidence * 100).toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                ) : transcription.status === 'processing' ? (
-                  <div className="flex items-center space-x-2 text-[#919191]">
-                    <Clock className="h-4 w-4 animate-spin" />
-                    <span>Processing transcription...</span>
-                  </div>
-                ) : (
-                  <div className="text-red-500">
-                    Transcription failed. Please try again.
-                  </div>
-                )}
-              </CardContent>
-            </CollapsibleContent>
+                <div className="flex items-center space-x-3">
+                  <Badge 
+                    variant="outline" 
+                    className={cn("capitalize border", getStatusColor(item.status))}
+                  >
+                    <span className="flex items-center space-x-1.5">
+                      {getStatusIcon(item.status)}
+                      <span>{item.status}</span>
+                    </span>
+                  </Badge>
+                  <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
+                </div>
+              </div>
+            </CardContent>
           </Card>
-        </Collapsible>
+        </Link>
       ))}
     </div>
   )
