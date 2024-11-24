@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { 
@@ -22,6 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from 'react';
+import storage from '@/lib/storage';
 
 const navigation = [
   { 
@@ -44,6 +46,32 @@ const navigation = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [username, setUsername] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const loadUsername = async () => {
+      try {
+        const storedUsername = await storage.getItem<string>('username');
+        if (storedUsername) {
+          setUsername(storedUsername);
+        }
+      } catch (error) {
+        console.error('Error loading username:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadUsername();
+  }, []);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('assemblyAiToken');
+    storage.removeItem('username').then(() => {
+      router.push('/login');
+    });
+  };
   
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/80">
@@ -118,19 +146,29 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="pl-2 pr-3 gap-2">
                   <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#FF8A3C] to-[#FF5F3C] flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
+                    {isLoading ? (
+                      <div className="h-4 w-4 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                    ) : (
+                      <span className="text-white font-medium">
+                        {username ? username[0].toUpperCase() : 'U'}
+                      </span>
+                    )}
                   </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel className="truncate">
+                  {isLoading ? 'Loading...' : (username || 'User')}
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuItem>Billing</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                  Log out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

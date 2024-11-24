@@ -7,15 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import storage from "@/lib/storage";
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    username: "",
     apiToken: "",
   });
 
@@ -24,7 +25,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     // Validate form
-    if (!formData.email || !formData.password || !formData.apiToken) {
+    if (!formData.username || !formData.apiToken) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -34,20 +35,23 @@ export default function LoginPage() {
       return;
     }
 
-    // Check credentials
-    if (formData.email !== "admin@example.com" || formData.password !== "password@123") {
-      toast({
-        variant: "destructive",
-        title: "Invalid credentials",
-        description: "Please check your email and password",
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
       // Store API token in sessionStorage (will be cleared when tab is closed)
       sessionStorage.setItem("assemblyAiToken", formData.apiToken);
+      
+      // Store username and initialize user data in IndexedDB
+      await storage.setItem("username", formData.username);
+      
+      // Initialize empty arrays for templates and processes if they don't exist
+      const templates = await storage.getItem<any[]>(`${formData.username}_templates`);
+      if (!templates) {
+        await storage.setItem(`${formData.username}_templates`, []);
+      }
+      
+      const processes = await storage.getItem<any[]>(`${formData.username}_processes`);
+      if (!processes) {
+        await storage.setItem(`${formData.username}_processes`, []);
+      }
       
       toast({
         title: "Success",
@@ -62,6 +66,7 @@ export default function LoginPage() {
         title: "Error",
         description: "Something went wrong. Please try again.",
       });
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -79,28 +84,18 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-[#919191]">Email</Label>
+            <Label htmlFor="username" className="text-[#919191]">Username</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="admin@example.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              id="username"
+              type="text"
+              placeholder="johndoe"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className="bg-[#0F0F0F] border-[#1F1F1F] text-white placeholder:text-[#919191]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-[#919191]">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="bg-[#0F0F0F] border-[#1F1F1F] text-white placeholder:text-[#919191]"
+              autoComplete="off"
+              spellCheck="false"
             />
           </div>
 
@@ -109,15 +104,17 @@ export default function LoginPage() {
             <Input
               id="apiToken"
               type="password"
-              placeholder="Enter your AssemblyAI API token"
+              placeholder="••••••••"
               value={formData.apiToken}
               onChange={(e) => setFormData({ ...formData, apiToken: e.target.value })}
               className="bg-[#0F0F0F] border-[#1F1F1F] text-white placeholder:text-[#919191]"
+              autoComplete="off"
+              spellCheck="false"
             />
           </div>
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90"
             disabled={isLoading}
           >
@@ -131,6 +128,29 @@ export default function LoginPage() {
             )}
           </Button>
         </form>
+
+        <div className="mt-6 space-y-4">
+          <Separator className="bg-[#1F1F1F]" />
+          
+          <div className="space-y-4 text-sm text-[#919191]">
+            <div className="flex gap-2">
+              <Info className="h-4 w-4 flex-shrink-0 mt-1" />
+              <p>
+                Your API token is stored securely in your browser's session storage and is automatically cleared when you close your browser. It is never transmitted to any external servers.
+              </p>
+            </div>
+            
+            <div className="text-xs space-y-2">
+              <p className="font-medium text-[#919191]">Terms and Conditions:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>This application is provided "as is" without any warranties of any kind.</li>
+                <li>We are not responsible for any data loss or damages that may occur while using this application.</li>
+                <li>Your data is stored locally in your browser and we do not maintain any backups.</li>
+                <li>By using this application, you agree to these terms and conditions.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </Card>
     </div>
   );

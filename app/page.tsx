@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { WaveBackground } from "@/components/ui/wave-background";
-import { 
+import {
   Wand2,
   Mic2,
   Brain,
@@ -23,55 +23,63 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#030303]">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-[#030303]/80 backdrop-blur-xl border-b border-[#1F1F1F]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-2xl font-bold text-white"
-            >
-              DataVox
-              <span className="text-[#FF8A3C]">.</span>
-            </motion.div>
-            
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
-              <Button variant="ghost" className="text-[#919191] hover:text-white hover:bg-[#1F1F1F]">Features</Button>
-              <Button variant="ghost" className="text-[#919191] hover:text-white hover:bg-[#1F1F1F]">Docs</Button>
-              <Button variant="ghost" className="text-[#919191] hover:text-white hover:bg-[#1F1F1F]">Pricing</Button>
-              <Link href="/login">
-                <Button size="lg" className="bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90">
-                  Get Started
-                </Button>
-              </Link>
-            </nav>
+      <motion.header
+        initial={{ opacity: 0, }}
+        animate={{ opacity: 1, }}
+      >
+        <header className="fixed top-0 w-full z-50 bg-[#030303]/80 backdrop-blur-xl border-b border-[#1F1F1F]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-2xl font-bold text-white"
+              >
+                DataVox
+                <span className="text-[#FF8A3C]">.</span>
+              </motion.div>
 
-            {/* Mobile Navigation */}
-            <div className="md:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5 text-[#919191]" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-[#030303]/95 backdrop-blur-xl border-[#1F1F1F]">
-                  <DropdownMenuItem className="text-[#919191] focus:text-white focus:bg-[#1F1F1F]">Features</DropdownMenuItem>
-                  <DropdownMenuItem className="text-[#919191] focus:text-white focus:bg-[#1F1F1F]">Docs</DropdownMenuItem>
-                  <DropdownMenuItem className="text-[#919191] focus:text-white focus:bg-[#1F1F1F]">Pricing</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Desktop Navigation */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                <nav className="hidden md:flex items-center gap-6">
+                  <Button variant="ghost" className="text-[#919191] hover:text-white hover:bg-[#1F1F1F]">Features</Button>
+                  <Button variant="ghost" className="text-[#919191] hover:text-white hover:bg-[#1F1F1F]">Pricing</Button>
+                  <Link href="/login">
+                    <Button size="lg" className="bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90">
+                      Get Started
+                    </Button>
+                  </Link>
+                </nav>
+              </motion.div>
+
+              {/* Mobile Navigation */}
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-5 w-5 text-[#919191]" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-[#030303]/95 backdrop-blur-xl border-[#1F1F1F]">
+                    <DropdownMenuItem className="text-[#919191] focus:text-white focus:bg-[#1F1F1F]">Features</DropdownMenuItem>
+                    <DropdownMenuItem className="text-[#919191] focus:text-white focus:bg-[#1F1F1F]">Pricing</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
+      </motion.header>
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
         <WaveBackground />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-[#FF8A3C]/10 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-[#FFB224]/10 via-transparent to-transparent" />
-        
+
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -98,19 +106,14 @@ export default function Home() {
                 Get Started
               </Button>
             </Link>
-            <Link href="https://www.assemblyai.com/docs" target="_blank" rel="noopener noreferrer">
-              <Button size="lg" variant="outline" className="border-[#1F1F1F] text-[#919191] hover:text-white hover:bg-[#1F1F1F]">
-                View Documentation
-              </Button>
-            </Link>
           </motion.div>
         </div>
       </section>
 
       {/* Features Section - Bento Box */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 relative">
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 relative">
         <div className="max-w-7xl mx-auto">
-          <motion.div 
+          <motion.div
             initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8 }}

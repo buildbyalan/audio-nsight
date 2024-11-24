@@ -27,7 +27,8 @@ import { TranscriptionList } from '@/components/transcription-list'
 import { UploadModal } from '@/components/upload-modal'
 import { Header } from '@/components/layout/header'
 import { Progress } from '@/components/ui/progress'
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+import storage from '@/lib/storage'
 
 interface Template {
   id: string
@@ -48,33 +49,70 @@ export default function DashboardPage() {
   const { toast } = useToast()
   const router = useRouter()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [username, setUsername] = useState<string>('')
   const [templates, setTemplates] = useState<Template[]>([])
-  const [processes, setProcesses] = useState<Process[]>([
-    {
-      id: '1',
-      name: 'Interview with John Doe.mp3',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    },
-    {
-      id: '2',
-      name: 'Team Meeting Recording.mp3',
-      status: 'processing',
-      createdAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-      progress: 65,
-    },
-    {
-      id: '3',
-      name: 'Product Demo.mp3',
-      status: 'failed',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-    },
-  ])
+  const [processes, setProcesses] = useState<Process[]>([])
   const [stats, setStats] = useState({
-    totalProcessed: 1254,
-    totalDuration: 3768, // in minutes
-    successRate: 98.5,
+    totalProcessed: 0,
+    totalDuration: 0,
+    successRate: 0,
   })
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        // Load username
+        const storedUsername = await storage.getItem<string>('username');
+        if (!storedUsername) {
+          // Redirect to login if no username found
+          router.push('/login');
+          return;
+        }
+        setUsername(storedUsername);
+
+        // Load templates
+        const userTemplates = await storage.getItem<Template[]>(`${storedUsername}_templates`) || [];
+        setTemplates(userTemplates);
+
+        // Load processes
+        const userProcesses = await storage.getItem<Process[]>(`${storedUsername}_processes`) || [];
+        setProcesses(userProcesses);
+
+        // Calculate stats
+        const completedProcesses = userProcesses.filter(p => p.status === 'completed').length;
+        const totalProcesses = userProcesses.length;
+        
+        setStats({
+          totalProcessed: totalProcesses,
+          totalDuration: totalProcesses * 30, // Assuming average duration of 30 minutes
+          successRate: totalProcesses > 0 ? (completedProcesses / totalProcesses) * 100 : 0,
+        });
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load user data",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [router, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-900 text-zinc-50">
+        <Header />
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF8A3C]"></div>
+        </div>
+      </div>
+    );
+  }
 
   const handleFileUpload = async (files: File[]) => {
     for (const file of files) {
@@ -147,7 +185,9 @@ export default function DashboardPage() {
             <div className="container max-w-screen-2xl mx-auto px-4 py-8">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-zinc-50">Welcome back, Alan</h1>
+                  <h1 className="text-3xl font-bold text-zinc-50 truncate">
+                    Welcome back, {username || 'User'}
+                  </h1>
                   <p className="text-zinc-400 mt-1">
                     Here's what's happening with your transcriptions
                   </p>

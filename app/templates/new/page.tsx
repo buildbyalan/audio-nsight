@@ -7,10 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Template, TemplateField, FieldType } from "@/types/template";
 import { PlusCircle, X } from "lucide-react";
 import { defaultTemplates } from "@/data/default-templates";
+import storage from "@/lib/storage";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const fieldTypes: { value: FieldType; label: string }[] = [
   { value: 'text', label: 'Text' },
@@ -23,13 +26,27 @@ const fieldTypes: { value: FieldType; label: string }[] = [
 ];
 
 export default function NewTemplatePage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
   const [fields, setFields] = useState<TemplateField[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const categories = Object.keys(defaultTemplates);
+
+  useEffect(() => {
+    const loadUsername = async () => {
+      const storedUsername = await storage.getItem<string>('username');
+      if (storedUsername) {
+        setUsername(storedUsername);
+      }
+    };
+    loadUsername();
+  }, []);
 
   const addField = () => {
     const newField: TemplateField = {
@@ -51,20 +68,62 @@ export default function NewTemplatePage() {
     setFields(fields.filter(field => field.id !== id));
   };
 
-  const handleSave = () => {
-    const template: Template = {
-      id: Date.now().toString(),
-      name,
-      description,
-      category,
-      subcategory: subcategory || undefined,
-      fields,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    // Here you would typically save the template
-    console.log('Saving template:', template);
+  const handleSave = async () => {
+    if (!username) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please log in to create templates",
+      });
+      return;
+    }
+
+    if (!name || !category || fields.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please fill in all required fields",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const template: Template = {
+        id: Date.now().toString(),
+        name,
+        description,
+        category,
+        subcategory: subcategory || undefined,
+        fields,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      // Load existing templates and add the new one
+      const existingTemplates = await storage.getItem<Template[]>(`${username}_templates`) || [];
+      const updatedTemplates = [...existingTemplates, template];
+      
+      // Save to storage
+      await storage.setItem(`${username}_templates`, updatedTemplates);
+      
+      toast({
+        title: "Success",
+        description: "Template created successfully",
+      });
+
+      // Navigate back to templates page
+      router.push('/templates');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create template",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -215,57 +274,27 @@ export default function NewTemplatePage() {
               </Card>
             </div>
 
-            {/* Right Column - Preview */}
-            <div className="lg:col-span-1">
-              <Card className="p-6 sticky top-8">
-                <h2 className="text-xl font-semibold mb-6">Template Preview</h2>
+            {/* Right Column - Actions */}
+            <div className="space-y-4">
+              <Card className="p-6">
+                <h3 className="text-lg font-medium mb-4">Template Actions</h3>
                 <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium">{name || 'Template Name'}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {description || 'Template description will appear here'}
-                    </p>
-                  </div>
-                  
-                  {(category || subcategory) && (
-                    <div className="space-y-1">
-                      {category && (
-                        <div className="text-sm">
-                          <span className="font-medium">Category:</span> {category}
-                        </div>
-                      )}
-                      {subcategory && (
-                        <div className="text-sm">
-                          <span className="font-medium">Subcategory:</span> {subcategory}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {fields.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Fields ({fields.length})</h4>
-                      <ul className="space-y-2">
-                        {fields.map((field) => (
-                          <li key={field.id} className="text-sm">
-                            {field.name || 'Unnamed Field'} ({field.type})
-                            {field.required && (
-                              <span className="text-[#FF8A3C] ml-1">*</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <Button 
+                    className="w-full bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90"
+                    disabled={isLoading}
+                    onClick={handleSave}
+                  >
+                    {isLoading ? 'Creating...' : 'Create Template'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => router.push('/templates')}
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
                 </div>
-                
-                <Button
-                  className="w-full mt-6 bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90"
-                  onClick={handleSave}
-                  disabled={!name || !category || fields.length === 0}
-                >
-                  Save Template
-                </Button>
               </Card>
             </div>
           </div>

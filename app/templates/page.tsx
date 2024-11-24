@@ -5,9 +5,12 @@ import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { defaultTemplates } from "@/data/default-templates";
 import { PlusCircle, Folder, ChevronRight, FileText, Pencil, Copy, Trash2, FolderEdit } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Template } from "@/types/template";
+import storage from "@/lib/storage";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,13 +23,104 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function TemplatesPage() {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [username, setUsername] = useState<string>('');
+  const [userTemplates, setUserTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleDeleteTemplate = () => {
-    // Implement delete functionality
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const storedUsername = await storage.getItem<string>('username');
+        if (!storedUsername) {
+          router.push('/login');
+          return;
+        }
+        
+        setUsername(storedUsername);
+        const templates = await storage.getItem<Template[]>(`${storedUsername}_templates`) || [];
+        setUserTemplates(templates);
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load templates",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadUserData();
+  }, [router, toast]);
+
+  const handleDeleteTemplate = async () => {
+    if (!selectedTemplate || !username) return;
+
+    try {
+      const updatedTemplates = userTemplates.filter(t => t.id !== selectedTemplate.id);
+      await storage.setItem(`${username}_templates`, updatedTemplates);
+      setUserTemplates(updatedTemplates);
+      setSelectedTemplate(null);
+      toast({
+        title: "Success",
+        description: "Template deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete template",
+      });
+    }
     setShowDeleteDialog(false);
   };
+
+  const handleDuplicateTemplate = async () => {
+    if (!selectedTemplate || !username) return;
+
+    try {
+      const newTemplate = {
+        ...selectedTemplate,
+        id: Math.random().toString(36).substr(2, 9),
+        name: `${selectedTemplate.name} (Copy)`,
+      };
+
+      const updatedTemplates = [...userTemplates, newTemplate];
+      await storage.setItem(`${username}_templates`, updatedTemplates);
+      setUserTemplates(updatedTemplates);
+      toast({
+        title: "Success",
+        description: "Template duplicated successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to duplicate template",
+      });
+    }
+  };
+
+  // Organize templates by category
+  const organizedTemplates = {
+    ...defaultTemplates,
+    'My Templates': userTemplates,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#030303] text-white">
+        <Header />
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF8A3C]"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#030303] text-white">
@@ -44,7 +138,7 @@ export default function TemplatesPage() {
               </Link>
             </div>
             <div className="p-2">
-              {Object.entries(defaultTemplates).map(([category, templates]) => (
+              {Object.entries(organizedTemplates).map(([category, templates]) => (
                 <div key={category} className="mb-2">
                   <div className="flex items-center px-2 py-1.5 text-sm font-medium text-muted-foreground">
                     <Folder className="mr-2 h-4 w-4" />
@@ -52,7 +146,7 @@ export default function TemplatesPage() {
                     <ChevronRight className="ml-auto h-4 w-4" />
                   </div>
                   <div className="ml-4">
-                    {templates.map((template) => (
+                    {Array.isArray(templates) && templates.map((template) => (
                       <button
                         key={template.id}
                         onClick={() => setSelectedTemplate(template)}
@@ -114,11 +208,13 @@ export default function TemplatesPage() {
                 </Card>
 
                 <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" className="flex-1">
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
+                  <Button variant="outline" className="flex-1" asChild>
+                    <Link href={`/templates/edit/${selectedTemplate.id}`}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Link>
                   </Button>
-                  <Button variant="outline" className="flex-1">
+                  <Button variant="outline" className="flex-1" onClick={handleDuplicateTemplate}>
                     <Copy className="mr-2 h-4 w-4" />
                     Duplicate
                   </Button>
@@ -150,8 +246,7 @@ export default function TemplatesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the template
-              and remove it from our servers.
+              This action cannot be undone. This will permanently delete the template.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
