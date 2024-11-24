@@ -82,6 +82,9 @@ export default function TemplatesPage() {
         id: Math.random().toString(36).substr(2, 9),
         name: `${selectedTemplate.name} (Copy)`,
         isDefault: false,
+        createdBy: username,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       await addTemplate(newTemplate);
@@ -98,12 +101,6 @@ export default function TemplatesPage() {
     }
   };
 
-  // Organize templates by category
-  const organizedTemplates = {
-    ...templates,
-    // 'My Templates': userTemplates,
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-900 text-zinc-50">
@@ -111,6 +108,15 @@ export default function TemplatesPage() {
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF8A3C]"></div>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-zinc-900 text-zinc-50">
+        <Header />
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)] text-red-500">{error}</div>
       </div>
     );
   }
@@ -131,7 +137,7 @@ export default function TemplatesPage() {
               </Link>
             </div>
             <div className="p-2">
-              {Object.entries(organizedTemplates).map(([category, templates]) => (
+              {Object.entries(templates).map(([category, templates]) => (
                 <div key={category} className="mb-4">
                   <div className="flex items-center px-3 py-2 text-sm font-medium text-zinc-400">
                     <Folder className="mr-2 h-4 w-4" />

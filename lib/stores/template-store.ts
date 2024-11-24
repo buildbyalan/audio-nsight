@@ -13,7 +13,8 @@ interface TemplateState {
   updateTemplate: (template: Template) => Promise<void>
   deleteTemplate: (templateId: string) => Promise<void>
   getTemplateById: (templateId: string) => Template | undefined
-  getTemplatesByCategory: (category: string) => Template[]
+  getTemplatesByCategory: (category: string) => Template[],
+  getCategories: () => string[]
 }
 
 export const useTemplateStore = create<TemplateState>((set, get) => ({
@@ -145,5 +146,10 @@ export const useTemplateStore = create<TemplateState>((set, get) => ({
   getTemplatesByCategory: (category: string) => {
     const { templates } = get()
     return templates[category] || []
+  },
+
+  getCategories: () => {
+    const { templates } = get()
+    return Object.keys(templates)
   }
 }))

@@ -22,6 +22,7 @@ export interface Template {
   category: string;
   subcategory?: string;
   fields: TemplateField[];
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
   isDefault?: boolean;

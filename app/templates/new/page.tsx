@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { Template, TemplateField, FieldType } from "@/types/template";
 import { PlusCircle, X } from "lucide-react";
-import { defaultTemplates } from "@/data/default-templates";
+import { useTemplateStore } from "@/lib/stores/template-store";
 import storage from "@/lib/storage";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -37,17 +37,22 @@ export default function NewTemplatePage() {
   const [fields, setFields] = useState<TemplateField[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  const categories = Object.keys(defaultTemplates);
+  const { templates, addTemplate, getCategories, initializeTemplates } = useTemplateStore();
+  const categories = getCategories();
 
   useEffect(() => {
     const loadUsername = async () => {
+    await initializeTemplates();
+
       const storedUsername = await storage.getItem<string>('username');
-      if (storedUsername) {
-        setUsername(storedUsername);
+      if (!storedUsername) {
+        router.push('/login');
+        return;
       }
+      setUsername(storedUsername);
     };
     loadUsername();
-  }, []);
+  }, [initializeTemplates]);
 
   const addField = () => {
     const newField: TemplateField = {
@@ -99,32 +104,28 @@ export default function NewTemplatePage() {
     }
 
     setIsLoading(true);
-
+    
     try {
-      const template: Template = {
-        id: Date.now().toString(),
+      const newTemplate: Template = {
+        id: Math.random().toString(36).substr(2, 9),
         name,
         description,
         category,
-        subcategory: subcategory || undefined,
+        subcategory,
         fields,
+        createdBy: username,
+        isDefault: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      
-      // Load existing templates and add the new one
-      const existingTemplates = await storage.getItem<Template[]>(`${username}_templates`) || [];
-      const updatedTemplates = [...existingTemplates, template];
-      
-      // Save to storage
-      await storage.setItem(`${username}_templates`, updatedTemplates);
+
+      await addTemplate(newTemplate);
       
       toast({
         title: "Success",
         description: "Template created successfully",
       });
-
-      // Navigate back to templates page
+      
       router.push('/templates');
     } catch (error) {
       toast({
