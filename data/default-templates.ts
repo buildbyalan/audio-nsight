@@ -129,5 +129,6 @@ export const defaultTemplates: Record<string, Template[]> = {
       updatedAt: new Date().toISOString(),
       isDefault: true
     }
-  ]
+  ],
+  "My Templates": [],
 };

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
-import { defaultTemplates } from "@/data/default-templates";
+import { useTemplateStore } from "@/lib/stores/template-store";
 import { PlusCircle, Folder, ChevronRight, FileText, Pencil, Copy, Trash2, FolderEdit } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
@@ -26,14 +26,14 @@ export default function TemplatesPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [username, setUsername] = useState<string>('');
-  const [userTemplates, setUserTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { templates, isLoading, error, initializeTemplates, deleteTemplate, addTemplate } = useTemplateStore();
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
+        await initializeTemplates();
         const storedUsername = await storage.getItem<string>('username');
         if (!storedUsername) {
           router.push('/login');
@@ -41,29 +41,23 @@ export default function TemplatesPage() {
         }
         
         setUsername(storedUsername);
-        const templates = await storage.getItem<Template[]>(`${storedUsername}_templates`) || [];
-        setUserTemplates(templates);
       } catch (error) {
-        console.error('Error loading templates:', error);
+        console.error('Error loading data:', error);
         toast({
           variant: "destructive",
           title: "Error",
           description: "Failed to load templates",
         });
-      } finally {
-        setIsLoading(false);
       }
     };
     loadUserData();
-  }, [router, toast]);
+  }, [router, toast, initializeTemplates]);
 
   const handleDeleteTemplate = async () => {
     if (!selectedTemplate || !username) return;
 
     try {
-      const updatedTemplates = userTemplates.filter(t => t.id !== selectedTemplate.id);
-      await storage.setItem(`${username}_templates`, updatedTemplates);
-      setUserTemplates(updatedTemplates);
+      await deleteTemplate(selectedTemplate.id);
       setSelectedTemplate(null);
       toast({
         title: "Success",
@@ -87,11 +81,10 @@ export default function TemplatesPage() {
         ...selectedTemplate,
         id: Math.random().toString(36).substr(2, 9),
         name: `${selectedTemplate.name} (Copy)`,
+        isDefault: false,
       };
 
-      const updatedTemplates = [...userTemplates, newTemplate];
-      await storage.setItem(`${username}_templates`, updatedTemplates);
-      setUserTemplates(updatedTemplates);
+      await addTemplate(newTemplate);
       toast({
         title: "Success",
         description: "Template duplicated successfully",
@@ -107,8 +100,8 @@ export default function TemplatesPage() {
 
   // Organize templates by category
   const organizedTemplates = {
-    ...defaultTemplates,
-    'My Templates': userTemplates,
+    ...templates,
+    // 'My Templates': userTemplates,
   };
 
   if (isLoading) {
