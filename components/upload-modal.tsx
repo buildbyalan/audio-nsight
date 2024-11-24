@@ -104,6 +104,10 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
           </DialogDescription>
         </DialogHeader>
 
+        {/* Title Field */}
+        
+        {/* Template Selecction */}
+
         <div className="space-y-6">
           {/* File constraints info */}
           <Alert className="bg-[#1F1F1F] border-[#FF8A3C] text-[#FF8A3C]">

@@ -53,25 +53,32 @@ export function Header() {
   useEffect(() => {
     const loadUsername = async () => {
       try {
-        const storedUsername = await storage.getItem<string>('username');
+        // Initialize storage first
+        await storage.init()
+        
+        const storedUsername = await storage.getItem<string>('username')
         if (storedUsername) {
-          setUsername(storedUsername);
+          setUsername(storedUsername)
         }
       } catch (error) {
-        console.error('Error loading username:', error);
+        console.error('Error loading username:', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
-    loadUsername();
-  }, []);
+    }
+    loadUsername()
+  }, [])
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('assemblyAiToken');
-    storage.removeItem('username').then(() => {
-      router.push('/login');
-    });
-  };
+  const handleLogout = async () => {
+    try {
+      await storage.init()
+      sessionStorage.removeItem('assemblyAiToken')
+      await storage.removeItem('username')
+      router.push('/login')
+    } catch (error) {
+      console.error('Error during logout:', error)
+    }
+  }
   
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/80">

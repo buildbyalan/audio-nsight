@@ -52,8 +52,8 @@ class AssemblyAIService {
 
   private getApiKey(): string {
     try {
-      if (sessionStorage && sessionStorage.getItem('assemblyAIKey')) {
-        return sessionStorage.getItem('assemblyAIKey') as string
+      if (sessionStorage && sessionStorage.getItem('assemblyAiToken')) {
+        return sessionStorage.getItem('assemblyAiToken') as string
       }
       throw new Error('AssemblyAI key not found')
     } catch (error) {
