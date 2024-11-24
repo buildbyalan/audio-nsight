@@ -297,7 +297,60 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        {/* Speaker analysis content */}
+                        <div className="space-y-6">
+                          {process.result?.transcript?.utterances?.map((utterance, index) => (
+                            <div
+                              key={index}
+                              className={cn(
+                                "flex gap-4 p-4 rounded-lg",
+                                utterance.speaker === "A" 
+                                  ? "bg-blue-500/5 border border-blue-500/10" 
+                                  : "bg-red-500/5 border border-red-500/10"
+                              )}
+                            >
+                              <div className="flex-shrink-0">
+                                <div className={cn(
+                                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                                  utterance.speaker === "A" 
+                                    ? "bg-blue-500/10 text-blue-500" 
+                                    : "bg-red-500/10 text-red-500"
+                                )}>
+                                  {utterance.speaker}
+                                </div>
+                              </div>
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm text-zinc-400">
+                                    Speaker {utterance.speaker}
+                                  </div>
+                                  <div className="flex items-center space-x-2 text-xs text-zinc-500">
+                                    <Timer className="h-3 w-3" />
+                                    <span>
+                                      {Math.floor(utterance.start / 60)}:{String(Math.floor(utterance.start % 60)).padStart(2, '0')} - {Math.floor(utterance.end / 60)}:{String(Math.floor(utterance.end % 60)).padStart(2, '0')}
+                                    </span>
+                                    <span>•</span>
+                                    <span>{Math.round((utterance.end - utterance.start) * 10) / 10}s</span>
+                                  </div>
+                                </div>
+                                <p className="text-zinc-300 leading-relaxed">
+                                  {utterance.text}
+                                </p>
+                                <div className="flex items-center space-x-2 text-xs text-zinc-500">
+                                  <div className="flex items-center space-x-1">
+                                    <span>Confidence:</span>
+                                    <span className={cn(
+                                      utterance.confidence > 0.8 ? "text-green-500" :
+                                      utterance.confidence > 0.6 ? "text-yellow-500" :
+                                      "text-red-500"
+                                    )}>
+                                      {Math.round(utterance.confidence * 100)}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </CardContent>
                     </Card>
                   </TabsContent>
