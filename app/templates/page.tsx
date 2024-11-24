@@ -201,7 +201,19 @@ export default function TemplatesPage() {
                           </span>
                         </div>
                         {field.description && (
-                          <p className="text-zinc-400 text-sm mt-1">{field.description}</p>
+                          <p className="text-zinc-400 text-sm mt-2">
+                            {field.description}
+                          </p>
+                        )}
+                        {field.type === 'custom' && field.customPrompt && (
+                          <div className="mt-3 border-t border-zinc-700/50 pt-3">
+                            <div className="flex items-center text-sm text-zinc-400 mb-1">
+                              <span className="font-medium">Custom Field Prompt</span>
+                            </div>
+                            <p className="text-zinc-300 text-sm bg-zinc-800/50 p-3 rounded-md">
+                              {field.customPrompt}
+                            </p>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -257,7 +269,7 @@ export default function TemplatesPage() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="bg-zinc-900 border border-zinc-800">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template?</AlertDialogTitle>
+            <AlertDialogTitle className="text-zinc-300">Delete Template?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
               This action cannot be undone. This template will be permanently deleted.
             </AlertDialogDescription>
