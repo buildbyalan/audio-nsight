@@ -62,9 +62,6 @@ export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
           onClose()
           return
         }
-        setUsername(storedUsername)
-        await initializeTemplates()
-        console.log(storedUsername, getProcessesByUser(storedUsername))
       } catch (error) {
         console.error('Error loading data:', error)
         toast({
