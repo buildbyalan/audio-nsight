@@ -127,6 +127,15 @@ class AssemblyAIService {
   }
 
   // LeMUR methods
+  async customPrompt(transcriptId: string, prompt: string) {
+    const { response } = await this.initClient().lemur.task({
+      transcript_ids: [transcriptId],
+      final_model: 'anthropic/claude-3-5-sonnet',
+      prompt
+    })
+    return response
+  }
+
   async getSummary(transcriptId: string, context?: string, format?: string) {
     const { response } = await this.initClient().lemur.summary({
       transcript_ids: [transcriptId],

@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useProcessStore } from '@/lib/stores/process-store'
+import { useTemplateStore } from '@/lib/stores/template-store'
 import { Process } from '@/types/process'
+import { Template } from '@/types/template'
 import {
   Card,
   CardContent,
@@ -37,6 +39,7 @@ import {
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Header } from "@/components/layout/header"
+import { generatePrompt } from '@/lib/prompt-generator'
 
 export default function TranscriptionPage({ params: { id } }: { params: { id: string } }) {
   const params = useParams()
@@ -44,14 +47,29 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
   const [process, setProcess] = useState<Process | null>(null)
   const [activeTab, setActiveTab] = useState('transcript')
   const { getProcessById, initializeProcesses } = useProcessStore()
+  const { templates, initializeTemplates } = useTemplateStore()
+  const [template, setTemplate] = useState<Template | null>(null)
 
   useEffect(() => {
     const init = async () => {
-     await initializeProcesses()
+      // Initialize both stores
+      await Promise.all([initializeProcesses(), initializeTemplates()])
     
       const id = params.id as string
       const currentProcess = getProcessById(id)
       setProcess(currentProcess)
+
+      // Find the template
+      if (currentProcess?.templateId) {
+        // Search through all template categories
+        for (const category of Object.values(templates)) {
+          const foundTemplate = category.find(t => t.id === currentProcess.templateId)
+          if (foundTemplate) {
+            setTemplate(foundTemplate)
+            break
+          }
+        }
+      }
   
       // If process is still processing, poll for updates
       if (currentProcess?.status === 'processing') {
@@ -68,7 +86,7 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
       }
     }
     init()
-  }, [params.id, getProcessById, initializeProcesses])
+  }, [params.id, getProcessById, initializeProcesses, initializeTemplates, templates])
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -360,11 +378,46 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
                       <CardHeader>
                         <CardTitle className="text-zinc-100">Structured Data</CardTitle>
                         <CardDescription className="text-zinc-400">
-                          Key information extracted from the conversation
+                          {template ? (
+                            <>
+                              Extracted information based on the {template.name} template.
+                              <div className="mt-1 text-sm text-zinc-500">{template.description}</div>
+                            </>
+                          ) : (
+                            'No template associated with this transcription'
+                          )}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        {/* Structured data content */}
+                        {template ? (
+                          process?.result?.structuredData ? (
+                            <div className="space-y-6">
+                              {template.fields.map((field) => (
+                                <div key={field.id} className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-medium text-zinc-200">
+                                      {field.name}
+                                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                                    </h4>
+                                    <span className="text-xs text-zinc-500">{field.type}</span>
+                                  </div>
+                                  {renderFieldValue(field, process.result.structuredData?.[field.name])}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center p-8">
+                              <div className="text-center space-y-4">
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF8A3C] mx-auto"></div>
+                                <p className="text-zinc-400">Analyzing transcript with AI...</p>
+                              </div>
+                            </div>
+                          )
+                        ) : (
+                          <div className="flex items-center justify-center p-8">
+                            <p className="text-zinc-500">No template data available</p>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -390,4 +443,33 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
       </main>
     </div>
   )
+}
+
+function renderFieldValue(field: { type: string }, value: any) {
+  if (!value) {
+    return <p className="text-zinc-500 italic">No data available</p>
+  }
+
+  switch (field.type) {
+    case 'keyFinding':
+    case 'quote':
+      if (Array.isArray(value)) {
+        return (
+          <ul className="space-y-2">
+            {value.map((item, index) => (
+              <li key={index} className="text-zinc-300">
+                {item}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      return <p className="text-zinc-300">{value}</p>
+
+    case 'date':
+      return <p className="text-zinc-300">{new Date(value).toLocaleDateString()}</p>
+
+    default:
+      return <p className="text-zinc-300">{value}</p>
+  }
 }
