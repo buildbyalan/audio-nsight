@@ -1,10 +1,40 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
+import {
+  ArrowLeft,
+  Download,
+  Trash2,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Timer,
+  Sparkles,
+  FileAudio,
+  MessageSquare,
+  Users,
+  Table,
+  Calendar,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useProcessStore } from '@/lib/stores/process-store'
-import { useTemplateStore } from '@/lib/stores/template-store'
 import { Process } from '@/types/process'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useTemplateStore } from '@/lib/stores/template-store'
 import { Template } from '@/types/template'
 import {
   Card,
@@ -13,40 +43,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  FileText,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Download,
-  Users,
-  MessageSquare,
-  Table,
-  Timer,
-  Calendar,
-  ArrowLeft,
-} from 'lucide-react'
 import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
 import { Header } from "@/components/layout/header"
 import { generatePrompt } from '@/lib/prompt-generator'
 import { assemblyAIService } from '@/lib/assemblyai'
 
-export default function TranscriptionPage({ params: { id } }: { params: { id: string } }) {
-  const params = useParams()
+export default function TranscriptionPage({ params }: { params: { id: string } }) {
+  const paramsId = useParams()
   const router = useRouter()
   const [process, setProcess] = useState<Process | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('transcript')
+  const processStore = useProcessStore()
+  const { toast } = useToast()
   const { getProcessById, initializeProcesses, updateStructuredData } = useProcessStore()
   const { templates, initializeTemplates, getTemplateById } = useTemplateStore()
   const [template, setTemplate] = useState<Template | null>(null)
@@ -56,7 +69,7 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
       // Initialize both stores
       await Promise.all([initializeProcesses(), initializeTemplates()])
     
-      const id = params.id as string
+      const id = paramsId.id as string
       const currentProcess = getProcessById(id)
       setProcess(currentProcess)
 
@@ -104,7 +117,23 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
       }
     }
     init()
-  }, [params.id, getProcessById, initializeProcesses, initializeTemplates, getTemplateById])
+  }, [paramsId.id, getProcessById, initializeProcesses, initializeTemplates, getTemplateById])
+
+  const handleDelete = async () => {
+    if (!process) return
+    
+    try {
+      await processStore.deleteProcess(process.id)
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Error deleting process:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete the process. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -126,7 +155,7 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
       case 'processing':
         return <Clock className="h-4 w-4 animate-spin" />
       case 'completed':
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle2 className="h-4 w-4" />
       case 'error':
         return <XCircle className="h-4 w-4" />
       case 'queued':
@@ -211,6 +240,14 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
                     <Button variant="outline" className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:border-zinc-600">
                       <Download className="h-4 w-4" />
                       Export CSV
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-red-400 hover:text-red-300 hover:border-red-700"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
                     </Button>
                   </div>
                 )}
@@ -460,6 +497,25 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
           </div>
         </div>
       </main>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-zinc-900 border border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-zinc-100">Delete Transcription</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete this transcription? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-800/80">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={handleDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
