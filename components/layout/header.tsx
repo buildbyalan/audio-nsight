@@ -90,11 +90,11 @@ export function Header() {
               <div className="relative w-8 h-8">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#FF8A3C] to-[#FF5F3C] rounded-lg transform rotate-3"></div>
                 <div className="absolute inset-0 bg-black rounded-lg flex items-center justify-center">
-                  <span className="text-[#FF8A3C] font-bold text-xl">P</span>
+                  <span className="text-[#FF8A3C] font-bold text-xl">A</span>
                 </div>
               </div>
               <span className="text-lg font-semibold bg-gradient-to-r from-[#FF8A3C] to-[#FF5F3C] text-transparent bg-clip-text">
-                PitchPerfect
+                AudioNsight
               </span>
             </Link>
 
