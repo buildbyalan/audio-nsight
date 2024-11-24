@@ -6,6 +6,7 @@ export interface TemplateField {
   type: FieldType;
   description?: string;
   required?: boolean;
+  customPrompt?: string; // Prompt for custom field type
   validation?: {
     pattern?: string;
     min?: number;

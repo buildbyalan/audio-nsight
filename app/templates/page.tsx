@@ -113,7 +113,7 @@ export default function TemplatesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#030303] text-white">
+      <div className="min-h-screen bg-zinc-900 text-zinc-50">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF8A3C]"></div>
@@ -123,15 +123,15 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#030303] text-white">
+    <div className="min-h-screen bg-zinc-900 text-zinc-50">
       <Header />
-      <div className="container max-w-screen-2xl">
-        <div className="flex h-[calc(100vh-3.5rem)]">
+      <div className="container max-w-screen-2xl mx-auto">
+        <div className="flex h-[calc(100vh-4rem)]">
           {/* Left Sidebar */}
-          <div className="w-80 border-r border-border/40 overflow-y-auto">
-            <div className="p-4 sticky top-0 bg-[#030303]/95 backdrop-blur supports-[backdrop-filter]:bg-[#030303]/60 border-b border-border/40">
+          <div className="w-80 border-r border-zinc-800 overflow-y-auto">
+            <div className="p-4 sticky top-0 bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/80 z-10 border-b border-zinc-800">
               <Link href="/templates/new">
-                <Button className="w-full bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90">
+                <Button className="w-full bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90 font-medium">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create Template
                 </Button>
@@ -139,24 +139,24 @@ export default function TemplatesPage() {
             </div>
             <div className="p-2">
               {Object.entries(organizedTemplates).map(([category, templates]) => (
-                <div key={category} className="mb-2">
-                  <div className="flex items-center px-2 py-1.5 text-sm font-medium text-muted-foreground">
+                <div key={category} className="mb-4">
+                  <div className="flex items-center px-3 py-2 text-sm font-medium text-zinc-400">
                     <Folder className="mr-2 h-4 w-4" />
-                    <span>{category}</span>
-                    <ChevronRight className="ml-auto h-4 w-4" />
+                    <span className="font-medium">{category}</span>
+                    <ChevronRight className="ml-auto h-4 w-4 opacity-50" />
                   </div>
-                  <div className="ml-4">
+                  <div className="mt-1 ml-3">
                     {Array.isArray(templates) && templates.map((template) => (
                       <button
                         key={template.id}
                         onClick={() => setSelectedTemplate(template)}
-                        className={`w-full flex items-center px-2 py-1.5 text-sm rounded-md transition-colors ${
+                        className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                           selectedTemplate?.id === template.id
-                            ? "bg-[#FF8A3C]/10 text-[#FF8A3C]"
-                            : "hover:bg-accent"
+                            ? "bg-[#FF8A3C]/10 text-[#FF8A3C] font-medium"
+                            : "text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-50"
                         }`}
                       >
-                        <FileText className="mr-2 h-4 w-4" />
+                        <FileText className={`mr-2 h-4 w-4 ${selectedTemplate?.id === template.id ? 'text-[#FF8A3C]' : 'text-zinc-400'}`} />
                         <span className="truncate">{template.name}</span>
                       </button>
                     ))}
@@ -167,64 +167,76 @@ export default function TemplatesPage() {
           </div>
 
           {/* Right Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto">
             {selectedTemplate ? (
-              <div className="max-w-3xl mx-auto">
+              <div className="max-w-3xl mx-auto p-8">
                 <div className="mb-8">
-                  <h1 className="text-3xl font-bold mb-2">{selectedTemplate.name}</h1>
-                  <p className="text-muted-foreground">{selectedTemplate.description}</p>
+                  <div className="flex items-center space-x-2 text-zinc-400 text-sm mb-3">
+                    <span>{selectedTemplate.category}</span>
+                    {selectedTemplate.subcategory && (
+                      <>
+                        <ChevronRight className="h-4 w-4" />
+                        <span>{selectedTemplate.subcategory}</span>
+                      </>
+                    )}
+                  </div>
+                  <h1 className="text-3xl font-bold mb-3 text-zinc-50">{selectedTemplate.name}</h1>
+                  <p className="text-zinc-400 text-lg">{selectedTemplate.description}</p>
                 </div>
 
-                <Card className="p-6 mb-6">
-                  <h2 className="text-xl font-semibold mb-4">Template Details</h2>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Category</label>
-                      <p className="mt-1">{selectedTemplate.category}</p>
-                    </div>
-                    {selectedTemplate.subcategory && (
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Subcategory</label>
-                        <p className="mt-1">{selectedTemplate.subcategory}</p>
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Fields</label>
-                      <div className="mt-2 space-y-2">
-                        {selectedTemplate.fields.map((field) => (
-                          <div key={field.id} className="flex items-center">
-                            <span className="text-sm">{field.name}</span>
+                <Card className="p-8 mb-8 bg-zinc-800/50 border-zinc-700/50 rounded-xl shadow-lg">
+                  <h2 className="text-xl font-semibold mb-6 text-zinc-50">Fields</h2>
+                  <div className="grid gap-6">
+                    {selectedTemplate.fields.map((field) => (
+                      <div key={field.id} className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-700/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <span className="text-zinc-50 font-medium">{field.name}</span>
                             {field.required && (
-                              <span className="text-[#FF8A3C] ml-1 text-sm">*</span>
+                              <span className="text-[#FF8A3C] ml-1.5 text-sm">Required</span>
                             )}
-                            <span className="text-muted-foreground text-sm ml-2">
-                              ({field.type})
-                            </span>
                           </div>
-                        ))}
+                          <span className="text-zinc-400 text-sm px-2 py-1 rounded-md bg-zinc-800">
+                            {field.type}
+                          </span>
+                        </div>
+                        {field.description && (
+                          <p className="text-zinc-400 text-sm mt-1">{field.description}</p>
+                        )}
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </Card>
 
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" className="flex-1" asChild>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="outline" 
+                    className="bg-zinc-200 text-zinc-900 hover:bg-zinc-800 hover:text-zinc-50 border-zinc-700" 
+                    asChild
+                  >
                     <Link href={`/templates/edit/${selectedTemplate.id}`}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
                     </Link>
                   </Button>
-                  <Button variant="outline" className="flex-1" onClick={handleDuplicateTemplate}>
+                  <Button 
+                    variant="outline"
+                    className="bg-zinc-200 text-zinc-900 hover:bg-zinc-800 hover:text-zinc-50 border-zinc-700"
+                    onClick={handleDuplicateTemplate}
+                  >
                     <Copy className="mr-2 h-4 w-4" />
                     Duplicate
                   </Button>
-                  <Button variant="outline" className="flex-1">
+                  <Button 
+                    variant="outline"
+                    className="bg-zinc-200 text-zinc-900 hover:bg-zinc-800 hover:text-zinc-50 border-zinc-700"
+                  >
                     <FolderEdit className="mr-2 h-4 w-4" />
-                    Change Category
+                    Move
                   </Button>
                   <Button
                     variant="destructive"
-                    className="flex-1"
+                    className="bg-red-500 hover:bg-red-600 text-white ml-auto"
                     onClick={() => setShowDeleteDialog(true)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -233,8 +245,9 @@ export default function TemplatesPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                Select a template to view details
+              <div className="h-full flex flex-col items-center justify-center text-zinc-400">
+                <FileText className="h-12 w-12 mb-4 opacity-50" />
+                <p className="text-lg">Select a template to view details</p>
               </div>
             )}
           </div>
@@ -242,20 +255,22 @@ export default function TemplatesPage() {
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-zinc-900 border border-zinc-800">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the template.
+            <AlertDialogTitle>Delete Template?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              This action cannot be undone. This template will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-zinc-200 text-zinc-900 hover:bg-zinc-800 hover:text-zinc-50 border-zinc-700">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteTemplate}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-500 text-white hover:bg-red-600"
             >
-              Delete
+              Delete Template
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

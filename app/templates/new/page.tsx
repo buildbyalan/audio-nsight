@@ -14,6 +14,7 @@ import { defaultTemplates } from "@/data/default-templates";
 import storage from "@/lib/storage";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/layout/header";
 
 const fieldTypes: { value: FieldType; label: string }[] = [
   { value: 'text', label: 'Text' },
@@ -70,11 +71,7 @@ export default function NewTemplatePage() {
 
   const handleSave = async () => {
     if (!username) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please log in to create templates",
-      });
+      router.push('/login');
       return;
     }
 
@@ -83,6 +80,20 @@ export default function NewTemplatePage() {
         variant: "destructive",
         title: "Error",
         description: "Please fill in all required fields",
+      });
+      return;
+    }
+
+    // Validate custom field prompts
+    const invalidCustomFields = fields.filter(
+      field => field.type === 'custom' && !field.customPrompt
+    );
+
+    if (invalidCustomFields.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please provide prompts for all custom fields",
       });
       return;
     }
@@ -126,50 +137,79 @@ export default function NewTemplatePage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-900 text-zinc-50">
+        <Header />
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF8A3C]"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#030303] text-white">
+    <div className="min-h-screen bg-zinc-900 text-zinc-50">
+      <Header />
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Create New Template</h1>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-zinc-50">Create New Template</h1>
+              <p className="text-zinc-400 mt-1">Design a template for your transcriptions</p>
+            </div>
+            <Button 
+              variant="outline" 
+              className="border-zinc-700 bg-zinc-200 hover:bg-zinc-800 text-zinc-900 hover:text-zinc-50"
+              onClick={() => router.push('/templates')}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+          </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Basic Info */}
             <div className="lg:col-span-2 space-y-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6">Basic Information</h2>
+              <Card className="p-6 bg-zinc-800/50 border-zinc-700">
+                <h2 className="text-xl font-semibold mb-6 text-zinc-50">Basic Information</h2>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Template Name</Label>
+                    <Label htmlFor="name" className="text-zinc-200">Template Name</Label>
                     <Input
                       id="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Enter template name"
-                      className="mt-1"
+                      className="mt-1 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-500 focus:ring-[#FF8A3C] focus:border-[#FF8A3C]"
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description" className="text-zinc-200">Description</Label>
                     <Textarea
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Describe your template"
-                      className="mt-1"
+                      className="mt-1 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-500 focus:ring-[#FF8A3C] focus:border-[#FF8A3C]"
                     />
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="category">Category</Label>
+                      <Label htmlFor="category" className="text-zinc-200">Category</Label>
                       <Select value={category} onValueChange={setCategory}>
-                        <SelectTrigger className="mt-1">
+                        <SelectTrigger className="mt-1 bg-zinc-900 border-zinc-700 text-zinc-200 focus:ring-[#FF8A3C] focus:border-[#FF8A3C]">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-zinc-900 border-zinc-700">
                           {categories.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
+                            <SelectItem 
+                              key={cat} 
+                              value={cat} 
+                              className="text-zinc-200 hover:bg-zinc-800 hover:text-zinc-50 focus:bg-zinc-800 focus:text-zinc-50"
+                            >
                               {cat}
                             </SelectItem>
                           ))}
@@ -178,23 +218,27 @@ export default function NewTemplatePage() {
                     </div>
                     
                     <div>
-                      <Label htmlFor="subcategory">Subcategory (Optional)</Label>
+                      <Label htmlFor="subcategory" className="text-zinc-200">Subcategory (Optional)</Label>
                       <Input
                         id="subcategory"
                         value={subcategory}
                         onChange={(e) => setSubcategory(e.target.value)}
                         placeholder="Enter subcategory"
-                        className="mt-1"
+                        className="mt-1 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-500 focus:ring-[#FF8A3C] focus:border-[#FF8A3C]"
                       />
                     </div>
                   </div>
                 </div>
               </Card>
 
-              <Card className="p-6">
+              <Card className="p-6 bg-zinc-800/50 border-zinc-700">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Fields</h2>
-                  <Button onClick={addField} variant="outline">
+                  <h2 className="text-xl font-semibold text-zinc-50">Fields</h2>
+                  <Button 
+                    onClick={addField} 
+                    variant="outline" 
+                    className="border-zinc-700 bg-zinc-200 hover:bg-zinc-800 text-zinc-900 hover:text-zinc-50"
+                  >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Field
                   </Button>
@@ -202,31 +246,35 @@ export default function NewTemplatePage() {
                 
                 <div className="space-y-4">
                   {fields.map((field) => (
-                    <Card key={field.id} className="p-4">
+                    <Card key={field.id} className="p-4 bg-zinc-900 border-zinc-700">
                       <div className="flex items-start justify-between">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                           <div>
-                            <Label>Field Name</Label>
+                            <Label className="text-zinc-200">Field Name</Label>
                             <Input
                               value={field.name}
                               onChange={(e) => updateField(field.id, { name: e.target.value })}
                               placeholder="Enter field name"
-                              className="mt-1"
+                              className="mt-1 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-500 focus:ring-[#FF8A3C] focus:border-[#FF8A3C]"
                             />
                           </div>
                           
                           <div>
-                            <Label>Field Type</Label>
+                            <Label className="text-zinc-200">Field Type</Label>
                             <Select
                               value={field.type}
                               onValueChange={(value: FieldType) => updateField(field.id, { type: value })}
                             >
-                              <SelectTrigger className="mt-1">
+                              <SelectTrigger className="mt-1 bg-zinc-900 border-zinc-700 text-zinc-200 focus:ring-[#FF8A3C] focus:border-[#FF8A3C]">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-zinc-900 border-zinc-700">
                                 {fieldTypes.map((type) => (
-                                  <SelectItem key={type.value} value={type.value}>
+                                  <SelectItem 
+                                    key={type.value} 
+                                    value={type.value}
+                                    className="text-zinc-200 hover:bg-zinc-800 hover:text-zinc-50 focus:bg-zinc-800 focus:text-zinc-50"
+                                  >
                                     {type.label}
                                   </SelectItem>
                                 ))}
@@ -235,21 +283,41 @@ export default function NewTemplatePage() {
                           </div>
                           
                           <div className="md:col-span-2">
-                            <Label>Description (Optional)</Label>
+                            <Label className="text-zinc-200">Description (Optional)</Label>
                             <Input
                               value={field.description || ''}
                               onChange={(e) => updateField(field.id, { description: e.target.value })}
                               placeholder="Enter field description"
-                              className="mt-1"
+                              className="mt-1 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-500 focus:ring-[#FF8A3C] focus:border-[#FF8A3C]"
                             />
                           </div>
+                          
+                          {field.type === 'custom' && (
+                            <div className="md:col-span-2">
+                              <Label className="text-zinc-200">
+                                Custom Field Prompt
+                                <span className="text-[#FF8A3C] ml-1">*</span>
+                              </Label>
+                              <Textarea
+                                value={field.customPrompt || ''}
+                                onChange={(e) => updateField(field.id, { customPrompt: e.target.value })}
+                                placeholder="Describe what kind of data you want to extract. For example: 'Extract the main action items discussed in the meeting' or 'Identify the key decisions made during the conversation'"
+                                className="mt-1 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-500 focus:ring-[#FF8A3C] focus:border-[#FF8A3C] min-h-[100px]"
+                              />
+                              <p className="mt-2 text-sm text-zinc-400">
+                                Write a clear prompt that describes the specific information you want to extract. 
+                                The more specific your prompt, the better the results will be.
+                              </p>
+                            </div>
+                          )}
                           
                           <div className="flex items-center space-x-2">
                             <Switch
                               checked={field.required || false}
                               onCheckedChange={(checked) => updateField(field.id, { required: checked })}
+                              className="data-[state=checked]:bg-[#FF8A3C]"
                             />
-                            <Label>Required Field</Label>
+                            <Label className="text-zinc-200">Required Field</Label>
                           </div>
                         </div>
                         
@@ -257,30 +325,24 @@ export default function NewTemplatePage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => removeField(field.id)}
-                          className="ml-4"
+                          className="ml-4 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     </Card>
                   ))}
-                  
-                  {fields.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No fields added yet. Click "Add Field" to start building your template.
-                    </div>
-                  )}
                 </div>
               </Card>
             </div>
 
             {/* Right Column - Actions */}
             <div className="space-y-4">
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">Template Actions</h3>
+              <Card className="p-6 bg-zinc-800/50 border-zinc-700 sticky top-8">
+                <h3 className="text-lg font-medium mb-4 text-zinc-50">Template Actions</h3>
                 <div className="space-y-4">
                   <Button 
-                    className="w-full bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90"
+                    className="w-full bg-[#FF8A3C] text-black hover:bg-[#FF8A3C]/90 font-medium"
                     disabled={isLoading}
                     onClick={handleSave}
                   >
@@ -288,13 +350,31 @@ export default function NewTemplatePage() {
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="w-full"
+                    className="w-full border-zinc-700 bg-zinc-200 hover:bg-zinc-800 text-zinc-900 hover:text-zinc-50"
                     onClick={() => router.push('/templates')}
                     disabled={isLoading}
                   >
                     Cancel
                   </Button>
                 </div>
+
+                {/* Validation Status */}
+                {(!name || !category || fields.length === 0) && (
+                  <div className="mt-6 p-4 rounded-lg bg-zinc-900 border border-zinc-700">
+                    <h4 className="text-sm font-medium text-zinc-200 mb-2">Required Fields</h4>
+                    <ul className="text-sm space-y-1">
+                      {!name && (
+                        <li className="text-zinc-400">• Template name is required</li>
+                      )}
+                      {!category && (
+                        <li className="text-zinc-400">• Category is required</li>
+                      )}
+                      {fields.length === 0 && (
+                        <li className="text-zinc-400">• At least one field is required</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </Card>
             </div>
           </div>
