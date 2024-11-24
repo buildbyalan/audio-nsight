@@ -27,6 +27,7 @@
     "@react-three/fiber": "^8.17.10",
     "@tanstack/react-table": "^8.20.5",
     "@types/three": "^0.170.0",
+    "assemblyai": "^4.8.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
