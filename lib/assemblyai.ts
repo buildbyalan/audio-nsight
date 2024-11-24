@@ -128,12 +128,27 @@ class AssemblyAIService {
 
   // LeMUR methods
   async customPrompt(transcriptId: string, prompt: string) {
-    const { response } = await this.initClient().lemur.task({
-      transcript_ids: [transcriptId],
-      final_model: 'anthropic/claude-3-5-sonnet',
-      prompt
-    })
-    return response
+    try {
+      const response = await this.initClient().lemur.task({
+        transcript_ids: [transcriptId],
+        final_model: 'anthropic/claude-3-5-sonnet',
+        prompt
+      })
+
+      const responseText = response.response
+      try {
+        return JSON.parse(responseText)
+      } catch (e) {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0])
+        }
+        throw new Error('Could not parse JSON from response')
+      }
+    } catch (error) {
+      console.error('Error in customPrompt:', error)
+      throw error
+    }
   }
 
   async getSummary(transcriptId: string, context?: string, format?: string) {

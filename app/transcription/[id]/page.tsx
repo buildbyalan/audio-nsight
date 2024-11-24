@@ -40,14 +40,15 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Header } from "@/components/layout/header"
 import { generatePrompt } from '@/lib/prompt-generator'
+import { assemblyAIService } from '@/lib/assemblyai'
 
 export default function TranscriptionPage({ params: { id } }: { params: { id: string } }) {
   const params = useParams()
   const router = useRouter()
   const [process, setProcess] = useState<Process | null>(null)
   const [activeTab, setActiveTab] = useState('transcript')
-  const { getProcessById, initializeProcesses } = useProcessStore()
-  const { templates, initializeTemplates } = useTemplateStore()
+  const { getProcessById, initializeProcesses, updateStructuredData } = useProcessStore()
+  const { templates, initializeTemplates, getTemplateById } = useTemplateStore()
   const [template, setTemplate] = useState<Template | null>(null)
 
   useEffect(() => {
@@ -59,14 +60,31 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
       const currentProcess = getProcessById(id)
       setProcess(currentProcess)
 
-      // Find the template
+      // Find template if process has templateId
       if (currentProcess?.templateId) {
-        // Search through all template categories
-        for (const category of Object.values(templates)) {
-          const foundTemplate = category.find(t => t.id === currentProcess.templateId)
-          if (foundTemplate) {
-            setTemplate(foundTemplate)
-            break
+        const template = getTemplateById(currentProcess.templateId)
+        setTemplate(template || null)
+
+        const isEmptyObject = (obj: any) => {
+          return Object.keys(obj).length === 0 && obj.constructor === Object
+        }
+
+        // If we have a template and no structured data yet, trigger analysis
+        if (template && isEmptyObject(currentProcess.result?.structuredData) && currentProcess.status === 'completed') {
+          try {
+            const prompt = generatePrompt(template)
+            const structuredData = await assemblyAIService.customPrompt(currentProcess.result.transcript.id, prompt)
+            await updateStructuredData(currentProcess.id, structuredData)
+            // Update local state
+            setProcess(prev => prev ? {
+              ...prev,
+              result: {
+                ...prev.result,
+                structuredData
+              }
+            } : null)
+          } catch (error) {
+            console.error('Error analyzing transcript:', error)
           }
         }
       }
@@ -86,7 +104,7 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
       }
     }
     init()
-  }, [params.id, getProcessById, initializeProcesses, initializeTemplates, templates])
+  }, [params.id, getProcessById, initializeProcesses, initializeTemplates, getTemplateById])
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -445,20 +463,20 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
   )
 }
 
-function renderFieldValue(field: { type: string }, value: any) {
+function renderFieldValue(field: { type: string; name: string }, value: any) {
   if (!value) {
     return <p className="text-zinc-500 italic">No data available</p>
   }
 
   switch (field.type) {
     case 'keyFinding':
-    case 'quote':
       if (Array.isArray(value)) {
         return (
           <ul className="space-y-2">
             {value.map((item, index) => (
-              <li key={index} className="text-zinc-300">
-                {item}
+              <li key={index} className="flex items-start space-x-2">
+                <span className="text-[#FF8A3C] mt-1">•</span>
+                <span className="text-zinc-300">{item}</span>
               </li>
             ))}
           </ul>
@@ -466,8 +484,58 @@ function renderFieldValue(field: { type: string }, value: any) {
       }
       return <p className="text-zinc-300">{value}</p>
 
+    case 'quote':
+      if (Array.isArray(value)) {
+        return (
+          <div className="space-y-4">
+            {value.map((quote, index) => (
+              <div key={index} className="pl-4 border-l-2 border-[#FF8A3C]">
+                <p className="text-zinc-300 italic">{quote}</p>
+              </div>
+            ))}
+          </div>
+        )
+      }
+      return <p className="text-zinc-300 italic">"{value}"</p>
+
+    case 'name':
+      return (
+        <div className="flex items-center space-x-2">
+          <span className="text-zinc-300 font-medium">{value}</span>
+          {field.name.toLowerCase().includes('speaker') && (
+            <Badge variant="secondary" className="bg-[#FF8A3C]/10 text-[#FF8A3C] border-[#FF8A3C]/20">
+              Speaker
+            </Badge>
+          )}
+        </div>
+      )
+
     case 'date':
-      return <p className="text-zinc-300">{new Date(value).toLocaleDateString()}</p>
+      try {
+        const date = new Date(value)
+        return (
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4 text-[#FF8A3C]" />
+            <span className="text-zinc-300">
+              {date.toLocaleDateString(undefined, {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </span>
+          </div>
+        )
+      } catch {
+        return <p className="text-zinc-300">{value}</p>
+      }
+
+    case 'text':
+      return (
+        <div className="prose prose-invert max-w-none">
+          <p className="text-zinc-300 whitespace-pre-wrap">{value}</p>
+        </div>
+      )
 
     default:
       return <p className="text-zinc-300">{value}</p>

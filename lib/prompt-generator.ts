@@ -37,11 +37,12 @@ function getOutputFormat(type: FieldType): string {
 export function generatePrompt(template: Template): string {
   const { name, description, fields } = template
 
-  // Start with the context and purpose
-  let prompt = `You are analyzing a ${name.toLowerCase()}. ${description}\n\n`
-  
-  // Add the task description
-  prompt += `Please extract the following information from the conversation. For each field, provide the information in the specified format.\n\n`
+  // Start with strict JSON output instruction
+  let prompt = `IMPORTANT: Your response must be ONLY a valid JSON object with no additional text, explanation, or formatting.
+
+You are analyzing a ${name.toLowerCase()}. ${description}
+
+Extract the following information from the conversation and format it as specified for each field:\n\n`
 
   // Add instructions for each field
   fields.forEach((field) => {
@@ -54,13 +55,17 @@ export function generatePrompt(template: Template): string {
     prompt += `- ${format}\n\n`
   })
 
-  // Add the output format instructions
-  prompt += `Return the results in the following JSON format:
+  // Add the output format instructions with emphasis on clean JSON
+  prompt += `RESPONSE FORMAT:
 {
   ${fields.map(field => `"${field.name}": <extracted_value>`).join(',\n  ')}
 }
 
-Make sure all required fields are filled. If a required field cannot be found in the conversation, indicate "NOT_FOUND" as the value. For optional fields that cannot be found, use null.`
+RULES:
+1. Return ONLY the JSON object, no other text
+2. Required fields must be filled with "NOT_FOUND" if not in conversation
+3. Optional fields should be null if not found
+4. Ensure the response is valid JSON that can be parsed`
 
   // If there's a custom prompt in the template, append it
   if ('customPrompt' in template && template.customPrompt) {
