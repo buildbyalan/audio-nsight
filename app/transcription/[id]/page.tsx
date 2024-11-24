@@ -161,7 +161,7 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-2 text-zinc-400 hover:text-zinc-100"
+                    className="gap-2 text-zinc-400"
                     onClick={() => router.back()}
                   >
                     <ArrowLeft className="h-4 w-4" />
@@ -204,11 +204,11 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
 
                 {process.status === 'completed' && (
                   <div className="flex items-center space-x-3">
-                    <Button variant="outline" className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600">
+                    <Button variant="outline" className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:border-zinc-600">
                       <Download className="h-4 w-4" />
                       Export JSON
                     </Button>
-                    <Button variant="outline" className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600">
+                    <Button variant="outline" className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:border-zinc-600">
                       <Download className="h-4 w-4" />
                       Export CSV
                     </Button>
