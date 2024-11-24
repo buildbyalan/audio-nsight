@@ -126,5 +126,22 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
     return Object.values(processes)
       .filter(p => p.status === status)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  },
+
+  // Structured data methods
+  updateStructuredData: async (id: string, data: Record<string, any>) => {
+    const { processes } = get()
+    const existingProcess = processes[id]
+    
+    if (!existingProcess) {
+      throw new Error('Process not found')
+    }
+
+    return await get().updateProcess(id, {
+      result: {
+        ...existingProcess.result,
+        structuredData: data
+      }
+    })
   }
 }))

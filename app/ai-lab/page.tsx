@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import Header from '@/components/layout/header'
@@ -22,18 +22,7 @@ export default function AILabsPage() {
   const { toast } = useToast()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [username, setUsername] = useState<string>('')
-  const [processes, setProcesses] = useState<Process[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const { getProcessesByUser, initializeProcesses } = useProcessStore()
-
-  // Function to refresh processes
-  const refreshProcesses = useCallback(async () => {
-    const storedUsername = await storage.getItem<string>('username')
-    if (storedUsername) {
-      const userProcesses = getProcessesByUser(storedUsername)
-      setProcesses(userProcesses)
-    }
-  }, [getProcessesByUser])
+  const { processes, isLoading, initializeProcesses, refreshProcesses } = useProcessStore()
 
   useEffect(() => {
     const init = async () => {
@@ -43,7 +32,6 @@ export default function AILabsPage() {
         if (storedUsername) {
           setUsername(storedUsername)
           await initializeProcesses()
-          await refreshProcesses()
         } else {
           router.push('/login')
           return
@@ -55,13 +43,11 @@ export default function AILabsPage() {
           description: 'Failed to load processes',
           variant: 'destructive',
         })
-      } finally {
-        setIsLoading(false)
       }
     }
 
     init()
-  }, [router, toast, getProcessesByUser, initializeProcesses, refreshProcesses])
+  }, [router, toast, initializeProcesses])
 
   const handleFileUploadComplete = async () => {
     setIsUploadModalOpen(false)
@@ -103,7 +89,13 @@ export default function AILabsPage() {
           </div>
 
           {/* Transcription List */}
-          <TranscriptionList transcriptions={processes} />
+          {isLoading ? (
+            <div>Loading...</div>
+          ) : (
+            <TranscriptionList 
+              transcriptions={Object.values(processes)} 
+            />
+          )}
         </div>
       </main>
 

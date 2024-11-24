@@ -55,6 +55,28 @@ export const defaultTemplates: Record<string, Template[]> = {
       isDefault: true
     }
   ],
+  "Customer Support": [
+    {
+      id: "support-call-analysis",
+      name: "Support Call Analysis",
+      description: "Template for analyzing customer support interactions, including pain points, solutions, and satisfaction metrics",
+      category: "Customer Support",
+      fields: [
+        { id: "1", name: "Customer Name", type: "name", required: true },
+        { id: "2", name: "Agent Name", type: "name", required: true },
+        { id: "3", name: "Issue Category", type: "text", required: true },
+        { id: "4", name: "Pain Points", type: "keyFinding", required: true },
+        { id: "5", name: "Solution Provided", type: "text", required: true },
+        { id: "6", name: "Customer Satisfaction Score", type: "text" },
+        { id: "7", name: "Key Discussion Points", type: "quote" },
+        { id: "8", name: "Follow-up Required", type: "text" },
+        { id: "9", name: "Call Date", type: "date", required: true }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isDefault: true
+    }
+  ],
   "Court Cases": [
     {
       id: "witness-testimony",
