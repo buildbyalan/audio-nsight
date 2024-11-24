@@ -63,7 +63,7 @@ class IndexedDBAdapter implements StorageAdapter {
 
   async getItem<T>(key: string): Promise<T | null> {
     if (!this.db) throw new Error('Database not initialized');
-
+    console.log('key', key)
     return new Promise((resolve, reject) => {
       const store = key.split('_')[0];
       const tx = this.db!.transaction(this.stores[store] || this.stores.user, 'readonly');

@@ -29,6 +29,7 @@ export interface Process {
 }
 
 export interface ProcessStore {
+  username: string
   processes: Record<string, Process>
   isLoading: boolean
   error: string | null

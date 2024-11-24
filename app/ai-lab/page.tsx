@@ -9,18 +9,9 @@ import { Upload } from 'lucide-react'
 import { UploadModal } from '@/components/upload-modal'
 import { TranscriptionList } from '@/components/transcription-list'
 import storage from '@/lib/storage'
-import { assemblyAIService } from '@/lib/assemblyai'
+import { useProcessStore } from '@/lib/stores/process-store'
+import { Process } from '@/types/process'
 
-type Process = {
-  id: string
-  file_name: string
-  status: 'processing' | 'completed' | 'failed'
-  created_at: string
-  transcript?: {
-    text: string
-    confidence: number
-  }
-}
 
 export default function AILabsPage() {
   const router = useRouter()
@@ -29,6 +20,7 @@ export default function AILabsPage() {
   const [username, setUsername] = useState<string>('')
   const [processes, setProcesses] = useState<Process[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const { getProcessesByUser } = useProcessStore()
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -45,7 +37,7 @@ export default function AILabsPage() {
         setUsername(storedUsername)
 
         // Load processes
-        const userProcesses = await storage.getItem<Process[]>(`${storedUsername}_processes`) || []
+        const userProcesses = await getProcessesByUser(storedUsername) || []
         setProcesses(userProcesses)
       } catch (error) {
         console.error('Error loading user data:', error)

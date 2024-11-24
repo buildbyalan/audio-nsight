@@ -46,7 +46,7 @@ export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
   const [username, setUsername] = useState<string>('')
 
   const { templates, isLoading: isLoadingTemplates, error: templateError, initializeTemplates } = useTemplateStore()
-  const { addProcess, updateProcess } = useProcessStore()
+  const { addProcess, updateProcess, getProcessesByUser } = useProcessStore()
 
   useEffect(() => {
     const loadData = async () => {
@@ -64,6 +64,7 @@ export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
         }
         setUsername(storedUsername)
         await initializeTemplates()
+        console.log(storedUsername, getProcessesByUser(storedUsername))
       } catch (error) {
         console.error('Error loading data:', error)
         toast({

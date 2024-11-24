@@ -3,6 +3,7 @@ import storage from '@/lib/storage'
 import { Process, ProcessStore } from '@/types/process'
 
 export const useProcessStore = create<ProcessStore>((set, get) => ({
+  username: '',
   processes: {},
   isLoading: true,
   error: null,
@@ -10,7 +11,13 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
   initializeProcesses: async () => {
     try {
       await storage.init()
-      const processes = await storage.getItem<Record<string, Process>>('processes') || {}
+
+      const username = await storage.getItem('username')
+      if (!username) {
+        throw new Error('No username found in storage')
+      }
+      
+      const processes = await storage.getItem<Record<string, Process>>(`${username}_processes`) || {}
       set({ processes, isLoading: false, error: null })
     } catch (error) {
       set({ error: 'Failed to initialize processes', isLoading: false })
@@ -25,8 +32,13 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
         ...processes,
         [process.id]: process
       }
-      
-      await storage.setItem('processes', updatedProcesses)
+
+      const username = await storage.getItem('username')
+      if (!username) {
+        throw new Error('No username found in storage')
+      }
+
+      await storage.setItem(`${username}_processes`, updatedProcesses)
       set({ processes: updatedProcesses })
     } catch (error) {
       set({ error: 'Failed to add process' })
@@ -55,7 +67,12 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
         [id]: updatedProcess
       }
 
-      await storage.setItem('processes', updatedProcesses)
+      const username = await storage.getItem('username')
+      if (!username) {
+        throw new Error('No username found in storage')
+      }
+
+      await storage.setItem(`${username}_processes`, updatedProcesses)
       set({ processes: updatedProcesses })
     } catch (error) {
       set({ error: 'Failed to update process' })
@@ -69,7 +86,12 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
       const { processes } = get()
       const { [id]: removed, ...updatedProcesses } = processes
 
-      await storage.setItem('processes', updatedProcesses)
+      const username = await storage.getItem('username')
+      if (!username) {
+        throw new Error('No username found in storage')
+      }
+
+      await storage.setItem(`${username}_processes`, updatedProcesses)
       set({ processes: updatedProcesses })
     } catch (error) {
       set({ error: 'Failed to delete process' })
