@@ -450,6 +450,7 @@ export default function TranscriptionPage({ params: { id } }: { params: { id: st
                       </CardHeader>
                       <CardContent>
                         {/* Audio analysis content */}
+                        <p className="text-zinc-400">Coming soon.. </p>
                       </CardContent>
                     </Card>
                   </TabsContent>

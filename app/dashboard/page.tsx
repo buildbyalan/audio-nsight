@@ -21,7 +21,7 @@ import {
   Clock4
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { TranscriptionList } from '@/components/transcription-list'
 import { UploadModal } from '@/components/upload-modal'
@@ -29,119 +29,42 @@ import { Header } from '@/components/layout/header'
 import { Progress } from '@/components/ui/progress'
 import { cn } from "@/lib/utils"
 import storage from '@/lib/storage'
-
-interface Template {
-  id: string
-  name: string
-  description: string
-  createdAt: string
-}
-
-interface Process {
-  id: string
-  name: string
-  status: 'completed' | 'processing' | 'failed'
-  createdAt: string
-  progress?: number
-}
+import { useProcessStore } from '@/lib/stores/process-store'
 
 export default function DashboardPage() {
   const { toast } = useToast()
   const router = useRouter()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [username, setUsername] = useState<string>('')
-  const [templates, setTemplates] = useState<Template[]>([])
-  const [processes, setProcesses] = useState<Process[]>([])
-  const [stats, setStats] = useState({
-    totalProcessed: 0,
-    totalDuration: 0,
-    successRate: 0,
-  })
-  const [isLoading, setIsLoading] = useState(true)
-
+  const { processes, isLoading, initializeProcesses } = useProcessStore()
+  
   useEffect(() => {
-    const loadUserData = async () => {
+    const init = async () => {
       try {
-        // Load username
-        const storedUsername = await storage.getItem<string>('username');
-        if (!storedUsername) {
-          // Redirect to login if no username found
-          router.push('/login');
-          return;
+        await storage.init()
+        const storedUsername = await storage.getItem<string>('username')
+        if (storedUsername) {
+          setUsername(storedUsername)
+          await initializeProcesses()
+        } else {
+          router.push('/login')
+          return
         }
-        setUsername(storedUsername);
-
-        // Load templates
-        const userTemplates = await storage.getItem<Template[]>(`${storedUsername}_templates`) || [];
-        setTemplates(userTemplates);
-
-        // Load processes
-        const userProcesses = await storage.getItem<Process[]>(`${storedUsername}_processes`) || [];
-        setProcesses(userProcesses);
-
-        // Calculate stats
-        const completedProcesses = userProcesses.filter(p => p.status === 'completed').length;
-        const totalProcesses = userProcesses.length;
-        
-        setStats({
-          totalProcessed: totalProcesses,
-          totalDuration: totalProcesses * 30, // Assuming average duration of 30 minutes
-          successRate: totalProcesses > 0 ? (completedProcesses / totalProcesses) * 100 : 0,
-        });
       } catch (error) {
-        console.error('Error loading user data:', error);
+        console.error('Error initializing dashboard:', error)
         toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load user data",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUserData();
-  }, [router, toast]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-zinc-900 text-zinc-50">
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF8A3C]"></div>
-        </div>
-      </div>
-    );
-  }
-
-  const handleFileUpload = async (files: File[]) => {
-    for (const file of files) {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      try {
-        const response = await fetch('/api/transcribe', {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to upload file')
-        }
-
-        toast({
-          title: 'Success',
-          description: 'File uploaded successfully. Transcription in progress...',
-        })
-      } catch (error) {
-        toast({
-          variant: 'destructive',
           title: 'Error',
-          description: error instanceof Error ? error.message : 'Failed to upload file',
+          description: 'Failed to load processes',
+          variant: 'destructive',
         })
-        throw error
       }
     }
+
+    init()
+  }, [router, toast, initializeProcesses])
+
+  const handleFileUploadComplete = () => {
+    setIsUploadModalOpen(false)
   }
 
   // Quick action buttons data
@@ -165,13 +88,18 @@ export default function DashboardPage() {
     {
       icon: Wand2,
       label: 'AI Lab',
-      onClick: () => {},
+      onClick: () => router.push('/ai-lab'),
       color: 'text-purple-500',
       bgColor: 'bg-purple-500/10',
       description: 'Experiment with advanced AI features',
       badge: 'Beta',
     },
   ]
+
+  const processArray = Object.values(processes)
+  const completedCount = processArray.filter(p => p.status === 'completed').length
+  const processingCount = processArray.filter(p => p.status === 'processing').length
+  const failedCount = processArray.filter(p => p.status === 'error').length
 
   return (
     <div className="min-h-screen bg-zinc-900 text-zinc-50">
@@ -222,89 +150,80 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Stats Section */}
               <div className="mt-8">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {[
-                    {
-                      name: 'Total Processed',
-                      value: stats.totalProcessed.toLocaleString(),
-                      description: 'Compared to last month',
-                      icon: CheckCircle2,
-                      color: 'text-emerald-500',
-                    },
-                    {
-                      name: 'Total Duration',
-                      value: `${Math.floor(stats.totalDuration / 60)}h ${stats.totalDuration % 60}m`,
-                      description: '65% of monthly quota used',
-                      icon: Timer,
-                      color: 'text-blue-500',
-                    },
-                    {
-                      name: 'Success Rate',
-                      value: `${stats.successRate}%`,
-                      description: 'Based on last 100 transcriptions',
-                      icon: Sparkles,
-                      color: 'text-amber-500',
-                    },
-                  ].map((stat) => (
-                    <Card 
-                      key={stat.name} 
-                      className="bg-zinc-800/50 hover:bg-zinc-800/80 transition-colors border-zinc-700/50 p-4"
-                    >
-                      <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <div className="text-sm font-medium text-zinc-200">
-                          {stat.name}
-                        </div>
-                        <div className="h-8 w-8 rounded-lg bg-zinc-700/50 flex items-center justify-center">
-                          <stat.icon className={cn("h-5 w-5", stat.color)} />
-                        </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card className="p-6 bg-zinc-800/50 border-zinc-700/50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-zinc-400">Completed</p>
+                        <p className="text-2xl font-bold text-zinc-100">{completedCount}</p>
                       </div>
-                      <div className="text-2xl font-bold text-zinc-50">{stat.value}</div>
-                      <p className="text-xs text-zinc-400">
-                        {stat.description}
-                      </p>
-                    </Card>
-                  ))}
+                      <div className="p-3 bg-emerald-500/10 rounded-full">
+                        <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-6 bg-zinc-800/50 border-zinc-700/50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-zinc-400">Processing</p>
+                        <p className="text-2xl font-bold text-zinc-100">{processingCount}</p>
+                      </div>
+                      <div className="p-3 bg-yellow-500/10 rounded-full">
+                        <Clock className="h-6 w-6 text-yellow-500" />
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-6 bg-zinc-800/50 border-zinc-700/50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-zinc-400">Failed</p>
+                        <p className="text-2xl font-bold text-zinc-100">{failedCount}</p>
+                      </div>
+                      <div className="p-3 bg-red-500/10 rounded-full">
+                        <XCircle className="h-6 w-6 text-red-500" />
+                      </div>
+                    </div>
+                  </Card>
                 </div>
 
+                {/* Recent Transcriptions */}
                 <div className="mt-8">
-                  <Card className="bg-zinc-800/50 border-zinc-700/50 p-4">
-                    <div className="text-zinc-50">Recent Processes</div>
-                    <div className="text-zinc-400 mb-4">
-                      Your most recent audio processing tasks
-                    </div>
-                    <div className="space-y-4">
-                      {processes.map((process) => (
-                        <div
-                          key={process.id}
-                          className="flex items-center gap-4 p-4 rounded-lg bg-zinc-900/50 border border-zinc-700/50"
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center">
-                            <FileAudio className="h-5 w-5 text-zinc-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-zinc-200 truncate">{process.name}</h3>
-                            <p className="text-sm text-zinc-400">{process.status}</p>
-                          </div>
-                          <Progress value={process.progress} className="w-36 h-2 bg-zinc-700">
-                            <div className="h-2 bg-emerald-500 rounded-full" style={{ width: `${process.progress}%` }} />
-                          </Progress>
+                  <Card className="bg-zinc-800/50 border-zinc-700/50">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-semibold text-zinc-100">Recent Transcriptions</h2>
+                      </div>
+
+                      {isLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF8A3C] mx-auto"></div>
+                          <p className="text-zinc-400 mt-4">Loading transcriptions...</p>
                         </div>
-                      ))}
-                    </div>
+                      ) : processArray.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-zinc-400">No transcriptions yet. Upload your first audio file!</p>
+                        </div>
+                      ) : (
+                        <TranscriptionList transcriptions={processArray} />
+                      )}
+                    </CardContent>
                   </Card>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        <UploadModal 
-          isOpen={isUploadModalOpen}
-          onClose={() => setIsUploadModalOpen(false)}
-          onUpload={handleFileUpload}
-        />
       </main>
+
+      {/* Upload Modal */}
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onComplete={handleFileUploadComplete}
+      />
     </div>
   )
 }
