@@ -35,6 +35,7 @@ export interface ProcessStore {
   error: string | null
   // Actions
   initializeProcesses: () => Promise<void>
+  refreshProcesses: () => Promise<void>
   addProcess: (process: Process) => Promise<void>
   updateProcess: (id: string, data: Partial<Process>) => Promise<void>
   deleteProcess: (id: string) => Promise<void>

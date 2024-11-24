@@ -25,6 +25,23 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
     }
   },
 
+  refreshProcesses: async () => {
+    try {
+      await storage.init()
+      const username = await storage.getItem('username')
+      if (!username) {
+        throw new Error('No username found in storage')
+      }
+      
+      const processes = await storage.getItem<Record<string, Process>>(`${username}_processes`) || {}
+      set({ processes, error: null })
+    } catch (error) {
+      set({ error: 'Failed to refresh processes' })
+      console.error('Error refreshing processes:', error)
+      throw error
+    }
+  },
+
   addProcess: async (process: Process) => {
     try {
       const username = await storage.getItem('username')
