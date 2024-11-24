@@ -15,14 +15,20 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import storage from '@/lib/storage'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useTemplateStore } from '@/lib/stores/template-store'
 import { Template } from '@/types/template'
+import { useToast } from '@/hooks/use-toast'
+import { useProcessStore } from '@/lib/stores/process-store'
+import { Process, ProcessStatus } from '@/types/process'
+import { assemblyAIService } from '@/lib/assemblyai'
+
 
 interface UploadModalProps {
   isOpen: boolean
   onClose: () => void
-  onUpload: (files: File[]) => Promise<void>
+  onComplete: () => void
 }
 
 interface UploadingFile {
@@ -32,21 +38,74 @@ interface UploadingFile {
   error?: string
 }
 
-export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
+export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
+  const { toast } = useToast()
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
   const [title, setTitle] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
-  const { templates, isLoading, error, initializeTemplates } = useTemplateStore()
+  const [username, setUsername] = useState<string>('')
 
-  // Initialize templates on mount
+  const { templates, isLoading: isLoadingTemplates, error: templateError, initializeTemplates } = useTemplateStore()
+  const { addProcess, updateProcess } = useProcessStore()
+
   useEffect(() => {
-    initializeTemplates()
-  }, [initializeTemplates])
+    const loadData = async () => {
+      try {
+        await storage.init()
+        const storedUsername = await storage.getItem<string>('username')
+        if (!storedUsername) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Please log in to upload files",
+          })
+          onClose()
+          return
+        }
+        setUsername(storedUsername)
+        await initializeTemplates()
+      } catch (error) {
+        console.error('Error loading data:', error)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load templates",
+        })
+      }
+    }
+    loadData()
+  }, [initializeTemplates, onClose])
 
+  const createProcess = async (file: File): Promise<Process> => {
+    const process: Process = {
+      id: Math.random().toString(36).substr(2, 9),
+      title,
+      templateId: selectedTemplate,
+      createdBy: username,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'processing',
+      metadata: {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      }
+    }
 
-  const allTemplates = Object.values(templates).flat()
+    await addProcess(process)
+    return process
+  }
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (!selectedTemplate || !title) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please fill in all required fields",
+      })
+      return
+    }
+
     const newFiles = acceptedFiles.map((file) => ({
       file,
       progress: 0,
@@ -58,6 +117,9 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
     // Process each file
     for (const fileData of newFiles) {
       try {
+        // Create process first
+        const process = await createProcess(fileData.file)
+
         // Simulate progress updates
         const updateProgress = setInterval(() => {
           setUploadingFiles((files) =>
@@ -69,7 +131,17 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
           )
         }, 500)
 
-        await onUpload([fileData.file])
+        // Start transcription
+        const transcript = await assemblyAIService.transcribe(fileData.file)
+        
+        // Update process with results
+        await updateProcess(process.id, {
+          status: 'completed',
+          result: {
+            transcript,
+            structuredData: {} // Will be populated based on template processing
+          }
+        })
 
         clearInterval(updateProgress)
         setUploadingFiles((files) =>
@@ -79,7 +151,21 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
               : f
           )
         )
+
+        toast({
+          title: "Success",
+          description: "File uploaded and transcribed successfully",
+        })
+        onComplete()
       } catch (error) {
+        // Update process with error
+        if (error instanceof Error) {
+          await updateProcess(process.id, {
+            status: 'error',
+            result: { error: error.message }
+          })
+        }
+
         setUploadingFiles((files) =>
           files.map((f) =>
             f.file === fileData.file
@@ -91,9 +177,15 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
               : f
           )
         )
+
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to process file",
+        })
       }
     }
-  }, [onUpload])
+  }, [selectedTemplate, title, username, addProcess, updateProcess])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -109,6 +201,8 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
     )
   }
 
+  const allTemplates = Object.values(templates).flat()
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-[#0A0A0A] border-[#1F1F1F] text-white">
@@ -119,7 +213,6 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
             M4A, FLAC, AAC
           </DialogDescription>
         </DialogHeader>
-
 
         {/* Title Field */}
         <div className="space-y-4">
@@ -142,9 +235,9 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
                 <SelectValue placeholder="Select a template" />
               </SelectTrigger>
               <SelectContent className="bg-[#1F1F1F] border-zinc-800">
-                {isLoading ? (
+                {isLoadingTemplates ? (
                   <SelectItem value="loading" disabled>Loading templates...</SelectItem>
-                ) : error ? (
+                ) : templateError ? (
                   <SelectItem value="error" disabled>Error loading templates</SelectItem>
                 ) : (
                   allTemplates.map((template) => (

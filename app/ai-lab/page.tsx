@@ -62,42 +62,7 @@ export default function AILabsPage() {
     loadUserData()
   }, [router, toast])
 
-  const handleFileUpload = async (files: File[]) => {
-    for (const file of files) {
-      try {
-        // Initialize storage before saving
-        await storage.init()
-
-        const transcript = await assemblyAIService.transcribe(file)
-
-        const transcription = {
-          id: transcript.id,
-          file_name: file.name,
-          status: transcript.status === 'completed' ? 'completed' : 'processing',
-          created_at: new Date().toISOString(),
-          transcript: transcript.status === 'completed' ? {
-            text: transcript.text,
-            confidence: transcript.confidence || 0
-          } : undefined
-        }
-
-        // Add to processes list
-        const updatedProcesses = [transcription, ...processes]
-        setProcesses(updatedProcesses)
-        await storage.setItem(`${username}_processes`, updatedProcesses)
-
-        toast({
-          title: 'Success',
-          description: 'File transcribed successfully.',
-        })
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error instanceof Error ? error.message : 'Failed to transcribe file',
-        })
-      }
-    }
+  const handleFileUploadComplete = () => {
     setIsUploadModalOpen(false)
   }
 
@@ -144,7 +109,7 @@ export default function AILabsPage() {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleFileUpload}
+        onComplete={handleFileUploadComplete}
       />
     </div>
   )
