@@ -1,17 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import Header from '@/components/layout/header'
 import { Button } from '@/components/ui/button'
 import { Upload } from 'lucide-react'
-import { UploadModal } from '@/components/upload-modal'
+import dynamic from 'next/dynamic'
 import { TranscriptionList } from '@/components/transcription-list'
 import storage from '@/lib/storage'
 import { useProcessStore } from '@/lib/stores/process-store'
 import { Process } from '@/types/process'
 
+const UploadModal = dynamic(
+  () => import('@/components/upload-modal').then(mod => mod.UploadModal),
+  { ssr: false }
+)
 
 export default function AILabsPage() {
   const router = useRouter()
@@ -20,42 +24,48 @@ export default function AILabsPage() {
   const [username, setUsername] = useState<string>('')
   const [processes, setProcesses] = useState<Process[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { getProcessesByUser } = useProcessStore()
+  const { getProcessesByUser, initializeProcesses } = useProcessStore()
+
+  // Function to refresh processes
+  const refreshProcesses = useCallback(async () => {
+    const storedUsername = await storage.getItem<string>('username')
+    if (storedUsername) {
+      const userProcesses = getProcessesByUser(storedUsername)
+      setProcesses(userProcesses)
+    }
+  }, [getProcessesByUser])
 
   useEffect(() => {
-    const loadUserData = async () => {
+    const init = async () => {
       try {
-        // Initialize storage first
         await storage.init()
-
-        // Load username
         const storedUsername = await storage.getItem<string>('username')
-        if (!storedUsername) {
+        if (storedUsername) {
+          setUsername(storedUsername)
+          await initializeProcesses()
+          await refreshProcesses()
+        } else {
           router.push('/login')
           return
         }
-        setUsername(storedUsername)
-
-        // Load processes
-        const userProcesses = await getProcessesByUser(storedUsername) || []
-        setProcesses(userProcesses)
       } catch (error) {
-        console.error('Error loading user data:', error)
+        console.error('Error initializing:', error)
         toast({
-          variant: 'destructive',
           title: 'Error',
-          description: 'Failed to load transcription data',
+          description: 'Failed to load processes',
+          variant: 'destructive',
         })
       } finally {
         setIsLoading(false)
       }
     }
 
-    loadUserData()
-  }, [router, toast])
+    init()
+  }, [router, toast, getProcessesByUser, initializeProcesses, refreshProcesses])
 
-  const handleFileUploadComplete = () => {
+  const handleFileUploadComplete = async () => {
     setIsUploadModalOpen(false)
+    await refreshProcesses() // Refresh the processes list after upload
   }
 
   if (isLoading) {

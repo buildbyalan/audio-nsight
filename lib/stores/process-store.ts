@@ -27,15 +27,17 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
 
   addProcess: async (process: Process) => {
     try {
-      const { processes } = get()
-      const updatedProcesses = {
-        ...processes,
-        [process.id]: process
-      }
-
       const username = await storage.getItem('username')
       if (!username) {
         throw new Error('No username found in storage')
+      }
+
+      // Get existing processes from storage
+      const existingProcesses = await storage.getItem<Record<string, Process>>(`${username}_processes`) || {}
+      
+      const updatedProcesses = {
+        ...existingProcesses,
+        [process.id]: process
       }
 
       await storage.setItem(`${username}_processes`, updatedProcesses)

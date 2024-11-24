@@ -42,20 +42,28 @@ type LemurQuestion = {
 
 // AssemblyAI Service class
 class AssemblyAIService {
-  private client: AssemblyAI
+  private client: AssemblyAI | null = null
   
-  constructor() {
-    this.client = new AssemblyAI({
-      apiKey: this.getApiKey(),
-    })
+  private initClient() {
+    if (!this.client) {
+      this.client = new AssemblyAI({
+        apiKey: this.getApiKey(),
+      })
+    }
+    return this.client
   }
 
   private getApiKey(): string {
+    if (typeof window === 'undefined') {
+      throw new Error('Cannot access sessionStorage during server-side rendering')
+    }
+    
     try {
-      if (sessionStorage && sessionStorage.getItem('assemblyAiToken')) {
-        return sessionStorage.getItem('assemblyAiToken') as string
+      const token = sessionStorage.getItem('assemblyAiToken')
+      if (!token) {
+        throw new Error('AssemblyAI key not found')
       }
-      throw new Error('AssemblyAI key not found')
+      return token
     } catch (error) {
       throw error
     }
@@ -70,7 +78,7 @@ class AssemblyAIService {
       ...this.getWebhookParams(options)
     }
 
-    const transcript = await this.client.transcripts.transcribe(params)
+    const transcript = await this.initClient().transcripts.transcribe(params)
 
     if (transcript.status === 'error') {
       console.error(`Transcription failed: ${transcript.error}`)
@@ -120,7 +128,7 @@ class AssemblyAIService {
 
   // LeMUR methods
   async getSummary(transcriptId: string, context?: string, format?: string) {
-    const { response } = await this.client.lemur.summary({
+    const { response } = await this.initClient().lemur.summary({
       transcript_ids: [transcriptId],
       final_model: 'anthropic/claude-3-5-sonnet',
       context,
@@ -137,7 +145,7 @@ class AssemblyAIService {
       answer_options: q.answerOptions
     }))
 
-    const { response } = await this.client.lemur.questionAnswer({
+    const { response } = await this.initClient().lemur.questionAnswer({
       transcript_ids: [transcriptId],
       final_model: 'anthropic/claude-3-5-sonnet',
       questions: formattedQuestions
@@ -148,28 +156,28 @@ class AssemblyAIService {
 
   // Export methods
   async getSubtitles(transcriptId: string, format: 'srt' | 'vtt', charsPerCaption?: number) {
-    return await this.client.transcripts.subtitles(transcriptId, format, charsPerCaption)
+    return await this.initClient().transcripts.subtitles(transcriptId, format, charsPerCaption)
   }
 
   async getSentences(transcriptId: string) {
-    const { sentences } = await this.client.transcripts.sentences(transcriptId)
+    const { sentences } = await this.initClient().transcripts.sentences(transcriptId)
     return sentences
   }
 
   async getParagraphs(transcriptId: string) {
-    const { paragraphs } = await this.client.transcripts.paragraphs(transcriptId)
+    const { paragraphs } = await this.initClient().transcripts.paragraphs(transcriptId)
     return paragraphs
   }
 
   // Search methods
   async searchWords(transcriptId: string, words: string[]) {
-    const { matches } = await this.client.transcripts.wordSearch(transcriptId, words)
+    const { matches } = await this.initClient().transcripts.wordSearch(transcriptId, words)
     return matches
   }
 
   // Management methods
   async deleteTranscript(transcriptId: string) {
-    return await this.client.transcripts.delete(transcriptId)
+    return await this.initClient().transcripts.delete(transcriptId)
   }
 }
 
