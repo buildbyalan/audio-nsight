@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { X, Upload, AlertCircle, FileAudio } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
@@ -13,6 +13,11 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useTemplateStore } from '@/lib/stores/template-store'
+import { Template } from '@/types/template'
 
 interface UploadModalProps {
   isOpen: boolean
@@ -29,6 +34,17 @@ interface UploadingFile {
 
 export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
+  const [title, setTitle] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('')
+  const { templates, isLoading, error, initializeTemplates } = useTemplateStore()
+
+  // Initialize templates on mount
+  useEffect(() => {
+    initializeTemplates()
+  }, [initializeTemplates])
+
+
+  const allTemplates = Object.values(templates).flat()
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map((file) => ({
@@ -104,9 +120,43 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
           </DialogDescription>
         </DialogHeader>
 
+
         {/* Title Field */}
-        
-        {/* Template Selecction */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="bg-[#1F1F1F] border-zinc-800"
+              placeholder="Enter a title for your transcription"
+            />
+          </div>
+
+          {/* Template Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="template">Template</Label>
+            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+              <SelectTrigger className="bg-[#1F1F1F] border-zinc-800">
+                <SelectValue placeholder="Select a template" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1F1F1F] border-zinc-800">
+                {isLoading ? (
+                  <SelectItem value="loading" disabled>Loading templates...</SelectItem>
+                ) : error ? (
+                  <SelectItem value="error" disabled>Error loading templates</SelectItem>
+                ) : (
+                  allTemplates.map((template) => (
+                    <SelectItem key={template.id} value={template.id} className='text-white'>
+                      {template.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         <div className="space-y-6">
           {/* File constraints info */}
