@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { X, Upload, AlertCircle, FileAudio } from 'lucide-react'
+import { X, Upload, AlertCircle, FileAudio, ExternalLink } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useProcessStore } from '@/lib/stores/process-store'
 import { Process, ProcessStatus } from '@/types/process'
 import { assemblyAIService } from '@/lib/assemblyai'
-
+import { samples } from '@/data/audio-samples'
 
 interface UploadModalProps {
   isOpen: boolean
@@ -62,6 +62,9 @@ export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
           onClose()
           return
         }
+
+        await initializeTemplates()
+        setUsername(storedUsername)
       } catch (error) {
         console.error('Error loading data:', error)
         toast({
@@ -259,6 +262,25 @@ export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
               Maximum duration: 4 hours per file
             </AlertDescription>
           </Alert>
+
+          {/* Sample audio files */}
+          <div className="space-y-2">
+            <p className="text-sm text-zinc-400">Try these sample audio files:</p>
+            <div className="space-y-1 flex flex-wrap gap-x-4">
+              {samples.map((sample) => (
+                <a
+                  key={sample.id}
+                  href={sample.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-300"
+                >
+                  <span>{sample.name}</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              ))}
+            </div>
+          </div>
 
           {/* Drop zone */}
           <div
