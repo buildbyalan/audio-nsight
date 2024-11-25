@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import storage from '@/lib/storage'
-import { Process, ProcessStore } from '@/types/process'
+import { Process, ProcessStatus, ProcessStore } from '@/types/process'
 
 export const useProcessStore = create<ProcessStore>((set, get) => ({
   username: '',

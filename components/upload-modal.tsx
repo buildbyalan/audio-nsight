@@ -119,7 +119,7 @@ export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
     for (const fileData of newFiles) {
       try {
         // Create process first
-        const process = await createProcess(fileData.file)
+        const process = await createProcess(fileData.file) as Process
 
         // Simulate progress updates
         const updateProgress = setInterval(() => {
@@ -161,10 +161,10 @@ export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
       } catch (error) {
         // Update process with error
         if (error instanceof Error) {
-          await updateProcess(process.id, {
-            status: 'error',
-            result: { error: error.message }
-          })
+          // await updateProcess(process.id, {
+          //   status: 'error',
+          //   result: { error: error.message }
+          // })
         }
 
         setUploadingFiles((files) =>

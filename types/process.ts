@@ -43,4 +43,5 @@ export interface ProcessStore {
   getProcessesByUser: (userId: string) => Process[]
   getProcessesByTemplate: (templateId: string) => Process[]
   getProcessesByStatus: (status: ProcessStatus) => Process[]
+  updateStructuredData: (id: string, data: Record<string, any>) => Promise<void>
 }

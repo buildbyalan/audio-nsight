@@ -71,7 +71,7 @@ export default function TranscriptionPage({ params }: { params: { id: string } }
       await Promise.all([initializeProcesses(), initializeTemplates()])
     
       const id = paramsId.id as string
-      const currentProcess = getProcessById(id)
+      const currentProcess = getProcessById(id) as Process
       setProcess(currentProcess)
 
       // Find template if process has templateId
@@ -106,7 +106,7 @@ export default function TranscriptionPage({ params }: { params: { id: string } }
       // If process is still processing, poll for updates
       if (currentProcess?.status === 'processing') {
         const interval = setInterval(() => {
-          const updatedProcess = getProcessById(id)
+          const updatedProcess = getProcessById(id) as Process
           setProcess(updatedProcess)
   
           if (updatedProcess?.status !== 'processing') {
