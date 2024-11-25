@@ -50,6 +50,7 @@ import { format } from 'date-fns'
 import { Header } from "@/components/layout/header"
 import { generatePrompt } from '@/lib/prompt-generator'
 import { assemblyAIService } from '@/lib/assemblyai'
+import { ExportService } from '@/lib/export-service'
 
 export default function TranscriptionPage({ params }: { params: { id: string } }) {
   const paramsId = useParams()
@@ -133,6 +134,18 @@ export default function TranscriptionPage({ params }: { params: { id: string } }
         variant: "destructive",
       })
     }
+  }
+
+  const handleExportJson = () => {
+    if (!process?.result?.structuredData) return
+    const filename = `${process.title.toLowerCase().replace(/\s+/g, '-')}-structured-data.json`
+    ExportService.downloadAsJson(process.result.structuredData, filename)
+  }
+
+  const handleExportCsv = () => {
+    if (!process?.result?.structuredData) return
+    const filename = `${process.title.toLowerCase().replace(/\s+/g, '-')}-structured-data.csv`
+    ExportService.downloadAsCsv(process.result.structuredData, filename)
   }
 
   const getStatusColor = (status: string): string => {
@@ -233,11 +246,19 @@ export default function TranscriptionPage({ params }: { params: { id: string } }
 
                 {process.status === 'completed' && (
                   <div className="flex items-center space-x-3">
-                    <Button variant="outline" className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:border-zinc-600">
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:border-zinc-600"
+                      onClick={handleExportJson}
+                    >
                       <Download className="h-4 w-4" />
                       Export JSON
                     </Button>
-                    <Button variant="outline" className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:border-zinc-600">
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:border-zinc-600"
+                      onClick={handleExportCsv}
+                    >
                       <Download className="h-4 w-4" />
                       Export CSV
                     </Button>
