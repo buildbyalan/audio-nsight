@@ -35,8 +35,17 @@ export default function Home() {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-2xl font-bold text-white"
               >
-                DataVox
-                <span className="text-[#FF8A3C]">.</span>
+                <Link href="/dashboard" className="flex items-center gap-2">
+                  <div className="relative w-8 h-8">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#FF8A3C] to-[#FF5F3C] rounded-lg transform rotate-3"></div>
+                    <div className="absolute inset-0 bg-black rounded-lg flex items-center justify-center">
+                      <span className="text-[#FF8A3C] font-bold text-xl">A</span>
+                    </div>
+                  </div>
+                  <span className="text-lg font-semibold bg-gradient-to-r from-[#FF8A3C] to-[#FF5F3C] text-transparent bg-clip-text">
+                    AudioNsight
+                  </span>
+                </Link>
               </motion.div>
 
               {/* Desktop Navigation */}
@@ -157,7 +166,18 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">DataVox<span className="text-[#FF8A3C]">.</span></h3>
+              {/* <h3 className="text-lg font-semibold text-white">AudioNsight<span className="text-[#FF8A3C]">.</span></h3> */}
+              <Link href="/" className="flex items-center gap-2">
+                <div className="relative w-8 h-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF8A3C] to-[#FF5F3C] rounded-lg transform rotate-3"></div>
+                  <div className="absolute inset-0 bg-black rounded-lg flex items-center justify-center">
+                    <span className="text-[#FF8A3C] font-bold text-xl">A</span>
+                  </div>
+                </div>
+                <span className="text-lg font-semibold bg-gradient-to-r from-[#FF8A3C] to-[#FF5F3C] text-transparent bg-clip-text">
+                  AudioNsight
+                </span>
+              </Link>
               <p className="text-sm text-[#919191]">Transform audio recordings into structured data using AI</p>
             </div>
             <div className="space-y-4">
@@ -186,7 +206,7 @@ export default function Home() {
           </div>
           <Separator className="my-8 bg-[#1F1F1F]" />
           <div className="text-center text-sm text-[#919191]">
-            2024 DataVox. All rights reserved.
+            2024 AudioNsight. All rights reserved.
           </div>
         </div>
       </footer>

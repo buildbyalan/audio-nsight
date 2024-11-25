@@ -80,7 +80,7 @@ export default function LoginPage() {
             Welcome back<span className="text-[#FF8A3C]">.</span>
           </h1>
           <p className="text-[#919191]">
-            Sign in to continue to DataVox
+            Sign in to continue to AudioNsight
           </p>
         </div>
 
