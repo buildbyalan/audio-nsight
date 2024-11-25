@@ -302,7 +302,7 @@ export function UploadModal({ isOpen, onClose, onComplete }: UploadModalProps) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <FileAudio className="h-4 w-4 text-[#FF8A3C]" />
-                        <span className="text-sm truncate">{file.file.name}</span>
+                        <span className="text-sm truncate max-w-md">{file.file.name}</span>
                       </div>
                       {file.status === 'error' && (
                         <X className="h-4 w-4 text-red-500" />
